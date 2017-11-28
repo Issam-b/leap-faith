@@ -1,0 +1,35 @@
+{
+"manifest_version": 2,
+"name": "Leap of Fatih",
+"version": "0.1",
+"minimum_chrome_version": "19.0.1055.1",
+"background": {
+               "scripts": ["background.js"],
+				"persistent": false
+				},
+
+"permissions":[
+				"tabs",
+				"storage"],
+
+
+"content_scripts":[
+					{ "matches": ["http://*/*","https://*/*"],
+    				"js" : [
+           						"js/leap.js",
+            					"js/leapmotion.js" 
+            			   ], 
+    			    } ],
+"browser_action":{
+"default_icon": "icon.png",
+"default_title": "Leap Motion Controller",
+"default_popup": "popup.html"
+},
+ 
+
+
+}
+
+
+
+
