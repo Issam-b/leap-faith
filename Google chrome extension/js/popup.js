@@ -1,7 +1,7 @@
 console.log("LeapJS v" + Leap.version.full);
 var state = 'fetch';
 window.onkeypress = function(e) {
-    if (e.charCode == 32) { //spacebar
+    if (e.charCode == 32) { //Space bar
         if (state == 'fetch') {
             state = 'pausing';
         } else {
@@ -10,8 +10,9 @@ window.onkeypress = function(e) {
     }
 };
 
-// var for stats div in html
+// finger names mapping
 const finger_name = ["thumb", "index", "middle", "ring", "pinky"];
+// var for stats div in html
 var stats_div;
 var frameDatadiv;
 var handData;
