@@ -9,11 +9,27 @@
 		<h1>Leap of Faith Extension Setting</h1>
 
 		<div id="container">
-			<button onclick="controller.disconnect();">Disconnect</button>
-			<button onclick="controller.connect();">Connect</button>
+			<button id="bdisconnect">Disconnect</button>
+			<button id="bconnect">Connect</button>
 			<pre>
-    <div id="out"></div>
-  </pre>
+   				<div id="stats"></div>
+  			</pre>
 		</div>
+
+		<div id="main">
+			<h3>Frame data:</h3>
+			<div id="frameData"></div>
+			<div style="clear:both;"></div>
+			<h3>Hand data:</h3>
+			<div id="handData"></div>
+			<div style="clear:both;"></div>
+			<h3>Finger data:</h3>
+			<div id="pointableData"></div>
+			<div style="clear:both;"></div>
+			<h3>Gestures data:</h3>
+			<div id="gesturesData"></div>
+			<div style="clear:both;"></div>
+		</div>
+
 	</body>
 </html>

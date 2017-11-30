@@ -6,21 +6,23 @@
 "minimum_chrome_version": "19.0.1055.1",
 "options_page": "options.html",
 "background": {
-	"scripts": ["background.js"],
+	"scripts": ["js/background.js"],
 	"persistent": false
 },
 "content_scripts":[
 	{
 		"matches": [
-			"http://*/*",
-			"https://*/*"
+			"*://*/*",
+			"<all_urls>"
 		],
 		"js" : [
 			"js/my_leap.js",
 			"js/leap-0.6.4.js",
 			"js/jquery-1.9.0.min.js",
 			"js/leap-plugins-0.1.12.min.js"
-		]
+		],
+		"run_at" : "document_idle",
+		"all_frames": false
 	}
 ],
 "browser_action":{
@@ -30,6 +32,7 @@
 },
 "permissions": [
 	"tabs",
-	"storage"
+	"storage",
+	"webRequest"
 ]
 }
