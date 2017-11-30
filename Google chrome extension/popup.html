@@ -1,23 +1,48 @@
+<!doctype html>
+<!--
+ This page is shown when the extension button is clicked, because the
+ "browser_action" field in manifest.json contains the "default_popup" key with
+ value "popup.html".
+ -->
 <html>
 <head>
-	</head>
-	<body>
-		<h1> Extension Setting </h1>
-		
+	<title>Leap Motion Popup</title>
+	<style type="text/css">
+		body {
+			margin: 10px;
+			white-space: nowrap;
+		}
 
+		h1 {
+			font-size: 15px;
+		}
 
+		#container {
+			align-items: center;
+			/*display: flex;*/
+			justify-content: space-between;
+		}
+	</style>
 
+	<!--
+      - JavaScript and HTML must be in separate files: see our Content Security
+      - Policy documentation[1] for details and explanation.
+      -
+      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
+    -->
 
+	<script src="js/leap-0.6.4.js"></script>
+	<script src="js/popup.js"></script>
+</head>
 
-
-
-
-
-		
-	</body>
-	<script src= "https://js.leapmotion.com/leap-0.6.0-beta1.min.js">
-	</script>
-	
-
-
+<body>
+<h1>Leap Motion stats</h1>
+<div id="container">
+	<button onclick="controller.disconnect();">Disconnect</button>
+	<button onclick="controller.connect();">Connect</button>
+	<pre>
+    <div id="out"></div>
+  </pre>
+</div>
+</body>
 </html>

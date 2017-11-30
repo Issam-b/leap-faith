@@ -1,23 +1,19 @@
+<!doctype html>
 <html>
 <head>
-	</head>
+	<title>Leap of Faith Extension Setting</title>
+	<script src="js/leap-0.6.4.js"></script>
+	<script src="js/popup.js"></script>
+</head>
 	<body>
-		<h1> Extension Setting </h1>
-		
+		<h1>Leap of Faith Extension Setting</h1>
 
-
-
-
-
-
-
-
-
-		
+		<div id="container">
+			<button onclick="controller.disconnect();">Disconnect</button>
+			<button onclick="controller.connect();">Connect</button>
+			<pre>
+    <div id="out"></div>
+  </pre>
+		</div>
 	</body>
-	<script src= "https://js.leapmotion.com/leap-0.6.0-beta1.min.js">
-	</script>
-	
-
-
 </html>
