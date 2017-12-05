@@ -73,6 +73,27 @@ controller.loop(function(frame) {
 
 });
 
+function ShowSwipePath() {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    frame.gestures.forEach(function(gesture) {
+        if (gesture.type != "swipe") return;
+        var start = frame.interactionBox.normalizePoint(gesture.startPosition);
+        var end = frame.interactionBox.normalizePoint(gesture.position);
+
+        var startX = ctx.canvas.width * start[0];
+        var startY = ctx.canvas.width * (1 - start[1]);
+
+        var endX = ctx.canvas.width * end[0];
+        var endY = ctx.canvas.width * (1 - end[1]);
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+    });
+}
+
 function ShowFingersCanvas(frame) {
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -94,8 +115,8 @@ function PositionMarker(frame) {
         var position = frame.pointables[0].stabilizedTipPosition;
         var normalized = frame.interactionBox.normalizePoint(position);
 
-        element.style.left = window.innerWidth * normalized[0];
-        element.style.top = window.innerHeight * (1 - normalized[1]);
+        element.style.left = window.innerWidth * normalized[0] + "px";
+        element.style.top = window.innerHeight * (1 - normalized[1]) + "px";
     }
 }
 
