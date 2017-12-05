@@ -4,9 +4,22 @@
 	<title>Leap of Faith Extension Setting</title>
 	<script src="js/leap-0.6.4.js"></script>
 	<script src="js/popup.js"></script>
+
+	<style type="text/css">
+		#position {
+			width: 25px;
+			height: 25px;
+			position: absolute;
+			background-color: blue;
+		}
+	</style>
+
 </head>
 	<body>
+		<div id="position"></div>
 		<h1>Leap of Faith Extension Setting</h1>
+
+		<canvas id="canvas" width="800" height="600"></canvas>
 
 		<div id="container">
 			<button id="bdisconnect">Disconnect</button>
@@ -30,6 +43,7 @@
 			<div id="gesturesData"></div>
 			<div style="clear:both;"></div>
 		</div>
+
 
 	</body>
 </html>
