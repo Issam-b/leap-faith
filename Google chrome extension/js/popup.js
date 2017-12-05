@@ -26,6 +26,9 @@ var canvas;
 var ctx;
 var element;
 
+var curentY = 0;
+var currentX = 0;
+
 // for gestures, part
 var temp;
 
@@ -111,12 +114,24 @@ function ShowFingersCanvas(frame) {
     });
 }
 function PositionMarker(frame) {
+
     if (frame.pointables.length > 0) {
         var position = frame.pointables[0].stabilizedTipPosition;
         var normalized = frame.interactionBox.normalizePoint(position);
+        var newX = window.innerWidth * normalized[0];
+        var newY = window.innerHeight * (1 - normalized[1]);
+        element.style.left = newX + "px";
+        element.style.top = newY + "px";
 
-        element.style.left = window.innerWidth * normalized[0] + "px";
-        element.style.top = window.innerHeight * (1 - normalized[1]) + "px";
+        if(Math.abs((curentY - newY) / 30) > 2) {
+            window.scrollBy(0, - (curentY - newY));
+            curentY = newY;
+        }
+
+        if(Math.abs((currentX - newX) / 30) > 2) {
+            window.scrollBy(- (currentX - newX), 0);
+            currentX = newX;
+        }
     }
 }
 
