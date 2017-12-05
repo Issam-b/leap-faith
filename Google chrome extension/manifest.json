@@ -32,7 +32,6 @@
 },
 "permissions": [
 	"tabs",
-	"storage",
-	"webRequest"
+	"storage"
 ]
 }
