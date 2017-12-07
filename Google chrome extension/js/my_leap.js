@@ -1,30 +1,98 @@
-var tab_focus = false;
+console.log("LeapJS v" + Leap.version.full);
+var state = 'Connected';
 
-// Check if Current Tab has Focus, and only run this extension on the active tab
-function check_focus()
-{
-	try {
-		chrome.runtime.sendMessage({ tab_status: 'current' }, function(response) {
-			if(response.active && window.location.href == response.url && document.hasFocus())
-			{
-				tab_has_focus = true;
-			}
-			else
-			{
-				tab_has_focus = false;
-			}
-		});
-	}
-	catch(error) {
-		// If you clicked to reload this extension, you will get this error, which a refresh fixes
-		if(error.message.indexOf('Error connecting to extension') !== -1)
-		{
-			document.location.reload(true);
-		}
-		// Something else went wrong... I blame Grumpy Cat
-		else
-		{
-			console.error(error.message);
-		}
-	}
+window.onkeypress = function(e) {
+    if (e.charCode == 32) { // Space bar
+        if (state == 'Connected') {
+            controller.disconnect();
+            state = 'Disconnected';
+        } else {
+            controller.connect();
+            state = 'Connected';
+        }
+    }
+};
+
+// var for stats div in html
+var curentY = 0;
+var currentX = 0;
+
+var ScrollOn = true;
+
+// create the leap controller instance with parameters
+var controller = new Leap.Controller( {
+    enableGestures: true
+});
+
+// run the leap loop, this will be running until disconnected
+controller.loop(function(frame) {
+
+    // draw marker position on screen
+    ScrollMarker(frame);
+
+});
+
+function ScrollMarker(frame) {
+
+    if (frame.pointables.length > 0) {
+        var position = frame.pointables[0].stabilizedTipPosition;
+        var normalized = frame.interactionBox.normalizePoint(position);
+        var newX = window.innerWidth * normalized[0];
+        var newY = window.innerHeight * (1 - normalized[1]);
+
+        // Vertical
+        if(Math.abs((curentY - newY) / 30) > 2) {
+            window.scrollBy(0, - (curentY - newY));
+            curentY = newY;
+        }
+
+		// Horizontal
+        if(Math.abs((currentX - newX) / 30) > 2) {
+            window.scrollBy(- (currentX - newX), 0);
+            currentX = newX;
+        }
+    }
 }
+
+controller.on('ready', function() {
+    console.log("ready. Service version: " + controller.connection.protocol.serviceVersion);
+});
+controller.on('connect', function() {
+    console.log("connected with protocol v" + controller.connection.opts.requestProtocolVersion);
+});
+controller.on('disconnect', function() {
+    console.log("disconnect");
+});
+controller.on('focus', function() {
+    console.log("focus");
+});
+controller.on('blur', function() {
+    console.log("blur");
+});
+
+controller.on('deviceAttached', function(deviceInfo) {
+    console.log("deviceAttached", deviceInfo);
+});
+controller.on('deviceRemoved', function(deviceInfo) {
+    console.log("deviceRemoved", deviceInfo);
+});
+controller.on('deviceStreaming', function(deviceInfo) {
+    console.log("deviceStreaming", deviceInfo);
+});
+controller.on('deviceStopped', function(deviceInfo) {
+    console.log("deviceStopped", deviceInfo);
+});
+controller.on('streamingStarted', function(deviceInfo) {
+    console.log("streamingStarted", deviceInfo);
+});
+controller.on('streamingStopped', function(deviceInfo) {
+    console.log("streamingStopped", deviceInfo);
+});
+
+controller.on('deviceConnected', function() {
+    console.log("deviceConnected");
+});
+
+controller.on('deviceDisconnected', function() {
+    console.log("deviceDisconnected");
+});

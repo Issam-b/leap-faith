@@ -16,10 +16,10 @@
 			"<all_urls>"
 		],
 		"js" : [
-			"js/my_leap.js",
 			"js/leap-0.6.4.js",
 			"js/jquery-1.9.0.min.js",
-			"js/leap-plugins-0.1.12.min.js"
+			"js/leap-plugins-0.1.12.min.js",
+			"js/my_leap.js"
 		],
 		"run_at" : "document_idle",
 		"all_frames": false
