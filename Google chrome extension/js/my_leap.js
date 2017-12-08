@@ -13,9 +13,20 @@ window.onkeypress = function(e) {
     }
 };
 
-// var for stats div in html
-var curentY = 0;
-var currentX = 0;
+// Extension settings
+var appSettings = ({
+    scrollSpeed: 1,
+    scrollStep: {
+        x: 5,
+        y: 5
+    },
+});
+
+// Variable declarations
+var lastFramePos = ({x: 0, y: 0});
+var curFramePos = ({x: 0, y: 0});
+var scrollLevel = ({x: 0, y: 0});
+var curScrollLevel = ({x: 0, y: 0});
 
 var ScrollOn = true;
 
@@ -37,21 +48,47 @@ function ScrollMarker(frame) {
     if (frame.pointables.length > 0) {
         var position = frame.pointables[0].stabilizedTipPosition;
         var normalized = frame.interactionBox.normalizePoint(position);
-        var newX = window.innerWidth * normalized[0];
-        var newY = window.innerHeight * (1 - normalized[1]);
-
+        curFramePos.x = window.innerWidth * normalized[0];
+        curFramePos.y = window.innerHeight * (1 - normalized[1]);
+        // TODO: check if hand lost or not before taking the last and current frame difference to scroll
+        // TODO: add scroll speed for x and y
         // Vertical
-        if(Math.abs((curentY - newY) / 30) > 2) {
-            window.scrollBy(0, - (curentY - newY));
-            curentY = newY;
+        if(Math.abs((lastFramePos.y - curFramePos.y) / 30) > 2) {
+            scrollLevel.y = - (lastFramePos.y - curFramePos.y) * ( ( getScrollMax("y") * appSettings.scrollStep.y * appSettings.scrollSpeed) / 10000);
+            window.scrollBy(0, curScrollLevel.y + scrollLevel.y);
+            lastFramePos.y = curFramePos.y;
+            if(curScrollLevel.y + scrollLevel.y < getScrollMax("y"))
+                curScrollLevel.y += scrollLevel.y;
+            else
+                curScrollLevel.y = getScrollMax("y")
+
+            // logs
+            console.log("hand change level Y: " + scrollLevel.y);
+            console.log("scroll change Y" + -(lastFramePos.y - curFramePos.y));
         }
 
 		// Horizontal
-        if(Math.abs((currentX - newX) / 30) > 2) {
-            window.scrollBy(- (currentX - newX), 0);
-            currentX = newX;
+        if(Math.abs((lastFramePos.x - curFramePos.x) / 30) > 2) {
+            scrollLevel.x = - (lastFramePos.x - curFramePos.y) * ( ( getScrollMax("x") * appSettings.scrollStep.x * appSettings.scrollSpeed) / 10000);
+            window.scrollBy(curScrollLevel.x + scrollLevel.x, 0);
+            lastFramePos.x = curFramePos.x;
+            if(curScrollLevel.x + scrollLevel.x < getScrollMax("x"))
+                curScrollLevel.x += scrollLevel.x;
+            else
+                curScrollLevel.x = getScrollMax("x")
+
+            // logs
+            console.log("hand change level X: " + scrollLevel.y);
+            console.log("scroll change X: " + -(lastFramePos.y - curFramePos.y));
         }
     }
+}
+
+function getScrollMax(axis){
+    if (axis == "y")
+        return ( 'scrollMaxY' in window ) ? window.scrollMaxY : (document.documentElement.scrollHeight - document.documentElement.clientHeight);
+    if (axis == "x")
+        return ( 'scrollMaxX' in window ) ? window.scrollMaxX : (document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
 controller.on('ready', function() {
