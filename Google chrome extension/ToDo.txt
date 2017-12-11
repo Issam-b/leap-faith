@@ -1,0 +1,15 @@
+Gestures to implement:
+ToDo:
+- Zoom in/out the web page
+- Refresh the browser
+- Navigate backward and forward
+- Navigate backward and forward in tabs
+- Pop up the message if the gesture is unclear to the system
+
+Later:
+- Open the new tab in the same window of google chrome
+- Click on links appearing on the web page
+- Click on images or videos
+
+Done:
+- Scroll up/down the web page
