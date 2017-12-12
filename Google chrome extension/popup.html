@@ -1,64 +1,31 @@
-<!doctype html>
-<!--
- This page is shown when the extension button is clicked, because the
- "browser_action" field in manifest.json contains the "default_popup" key with
- value "popup.html".
- -->
+<!DOCTYPE html>
 <html>
 <head>
-	<title>Leap Motion Popup</title>
-	<style type="text/css">
-		body {
-			margin: 10px;
-			white-space: nowrap;
-		}
-
-		h1 {
-			font-size: 15px;
-		}
-
-		#container {
-			align-items: center;
-			/*display: flex;*/
-			justify-content: space-between;
-		}
-	</style>
-
-	<!--
-      - JavaScript and HTML must be in separate files: see our Content Security
-      - Policy documentation[1] for details and explanation.
-      -
-      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
-    -->
-
-	<script src="js/leap-0.6.4.js"></script>
-	<script src="js/popup.js"></script>
-
+	<meta charset="utf-8" />
+	<title>The Pop Up</title>
+	
+	<link rel="stylesheet" href="style2.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<script type="text/javascript" src="js/jquery-1.9.0.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$('#button').on('click', function(){
+				$(this).toggleClass('on');
+			});
+		});
+	</script>
 </head>
-
 <body>
+	<center><h1><strong>Leap Motion</strong></h1></center>
+	<center><a href="#"><i class="material-icons" style="font-size:60px;color:rgb(46, 51, 53);text-shadow:2px 2px 4px #000000;">settings</i></a></center>
+	<section>
+		<h1><strong>Status</strong></h1>
+		<t href="#" id="button"><a href="#"> &#xF011; </a></t>
+		<span></span>
+		
+	</section>
+	
 
-	<div id="container">
-		<button id="bdisconnect">Disconnect</button>
-		<button id="bconnect">Connect</button>
-		<pre>
-			<div id="stats"></div>
-		</pre>
-	</div>
-
-	<div id="main">
-		<h3>Frame data:</h3>
-		<div id="frameData"></div>
-		<div style="clear:both;"></div>
-		<h3>Hand data:</h3>
-		<div id="handData"></div>
-		<div style="clear:both;"></div>
-		<h3>Finger data:</h3>
-		<div id="pointableData"></div>
-		<div style="clear:both;"></div>
-		<h3>Gestures data:</h3>
-		<div id="gesturesData"></div>
-		<div style="clear:both;"></div>
-	</div>
+	
 </body>
 </html>

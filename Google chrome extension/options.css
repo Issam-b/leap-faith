@@ -1,0 +1,38 @@
+p {
+    font-family: "Arial", Helvetica, sans-serif;
+}
+
+body{
+    font-size: 200%;
+
+    }
+
+center{
+        margin-bottom: 60px;
+    }
+
+first, second{
+    margin-left: 50px;
+    
+    }
+
+move {
+    margin-left: 90px;
+    
+}
+
+
+.container
+{
+
+    width: 400px;
+    height: 800px;
+    padding: 50px;
+    margin: auto;
+    background: #f8f9fa;
+    position: relative;
+    border-radius: 25px;
+    border: 2px solid rgb(177, 187, 162);
+    
+
+}
