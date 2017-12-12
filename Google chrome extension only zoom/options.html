@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+	<title>Leap of Faith Extension Setting</title>
+	<script src="js/leap-0.6.4.js"></script>
+	<script src="js/options.js"></script>
+
+	<style type="text/css">
+		body {
+			width: 150%;
+		}
+		#position {
+			width: 25px;
+			height: 25px;
+			position: absolute;
+			background-color: blue;
+		}
+	</style>
+
+</head>
+	<body>
+		<div id="position"></div>
+		<h1>Leap of Faith Extension Setting</h1>
+
+		<canvas id="canvas" width="800" height="600"></canvas>
+
+		<div id="container">
+			<button id="bdisconnect">Disconnect</button>
+			<button id="bconnect">Connect</button>
+			<pre>
+   				<div id="stats"></div>
+  			</pre>
+		</div>
+
+		<div id="main">
+			<h3>Frame data:</h3>
+			<div id="frameData"></div>
+			<div style="clear:both;"></div>
+			<h3>Hand data:</h3>
+			<div id="handData"></div>
+			<div style="clear:both;"></div>
+			<h3>Finger data:</h3>
+			<div id="pointableData"></div>
+			<div style="clear:both;"></div>
+			<h3>Gestures data:</h3>
+			<div id="gesturesData"></div>
+			<div style="clear:both;"></div>
+		</div>
+
+
+	</body>
+</html>
