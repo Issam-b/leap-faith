@@ -69,7 +69,6 @@ function navigate_history(frame) {
 	}
 }
 
-
 function ScrollPage(frame) {
 
     if (frame.pointables.length > 0) {
@@ -118,6 +117,18 @@ function getScrollMax(axis){
         return ( 'scrollMaxX' in window ) ? window.scrollMaxX : (document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
+function ToggleState() {
+    if(state == "Connected") {
+        controller.disconnet();
+        state = 'Disconnected';
+        console.log("deviceDisconnected");
+    } else if(state == "Disonnected") {
+        controller.connet();
+        state = 'Connected';
+        console.log("deviceConnected");
+    }
+}
+
 controller.on('ready', function() {
     console.log("ready. Service version: " + controller.connection.protocol.serviceVersion);
 });
@@ -154,9 +165,11 @@ controller.on('streamingStopped', function(deviceInfo) {
 });
 
 controller.on('deviceConnected', function() {
+    state = 'Connected';
     console.log("deviceConnected");
 });
 
 controller.on('deviceDisconnected', function() {
+    state = 'Disconnected';
     console.log("deviceDisconnected");
 });
