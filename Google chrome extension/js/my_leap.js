@@ -43,6 +43,32 @@ controller.loop(function(frame) {
 
 });
 
+function navigate_history(frame)
+{
+   if (frame.gestures.length > 0) {
+   loop: for (var i = 0; i < frame.gestures.length; i++) {
+      var gesture = frame.gestures[i];
+      if(gesture.type == "swipe") {
+          //Classify swipe as either horizontal or vertical
+          var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
+          //Classify as right-left or up-down
+          if(isHorizontal){
+              if(gesture.direction[0] > 0){
+                  history.forward();
+                    console.log('Next Page');
+                    continue loop;
+              } else {
+                  history.back();
+      console.log('Previous Page');
+                continue loop;
+              }
+          }        
+          }
+         
+       }
+     }
+  }
+  
 function ScrollMarker(frame) {
 
     if (frame.pointables.length > 0) {
