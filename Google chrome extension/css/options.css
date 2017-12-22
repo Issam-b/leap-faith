@@ -4,7 +4,6 @@ p {
 
 body{
     font-size: 200%;
-
     }
 
 center{
@@ -13,26 +12,20 @@ center{
 
 first, second{
     margin-left: 50px;
-    
     }
 
 move {
-    margin-left: 90px;
-    
+    margin-left: 90px; 
 }
-
 
 .container
 {
-
     width: 400px;
     height: 800px;
     padding: 50px;
-    margin: auto;
+    margin: 50px;
     background: #f8f9fa;
     position: relative;
     border-radius: 25px;
     border: 2px solid rgb(177, 187, 162);
-    
-
 }
