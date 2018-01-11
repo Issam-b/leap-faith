@@ -30,6 +30,8 @@ var curScrollLevel = ({x: 0, y: 0});
 
 var ScrollOn = true;
 
+var cheese = 0;
+
 // create the leap controller instance with parameters
 var controller = new Leap.Controller( {
     enableGestures: true
@@ -128,6 +130,27 @@ function ToggleState() {
         console.log("deviceConnected");
     }
 }
+
+//Function that currently has the best accuracy.
+controller.on('gesture', function(gesture) {
+	if (gesture.type = 'circle' && cheese >= 40) {
+		location.reload()
+		console.log(gesture.id)}
+	else {
+		cheese++;
+	}
+});
+
+/*
+Make a refresh function that has better accuracy.
+This one has potential, but the cheese one works better for now.
+
+controller.on('gesture', function(gesture) {
+	if (gesture.type = 'circle' && gesture.state == 'stop') {
+		console.log("One complete circle.")
+	}
+});
+*/
 
 controller.on('ready', function() {
     console.log("ready. Service version: " + controller.connection.protocol.serviceVersion);
