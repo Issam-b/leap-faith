@@ -1,6 +1,19 @@
 console.log("LeapJS v" + Leap.version.full);
 var state = 'Connected';
 
+// Excecute when page fully loaded
+window.onload = function(e) {
+    // add the status icon placeholder to the DOM of the page
+    console.log("DOM element added.");
+    $('body').append('<div id="status-placeholder" style="display: none;"><img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
+
+    //var imgString = '<img src="'.concat(imgURL, '" alt="scrolling" width="150" height="200"/>');
+    document.addEventListener("scroll", function(e) {
+        ScrollStatus();
+        });
+    
+ };
+
 window.onkeypress = function(e) {
     if (e.charCode == 32) { // Space bar
         if (state == 'Connected') {
@@ -43,8 +56,31 @@ controller.loop(function(frame) {
     // draw marker position on screen
     ScrollPage(frame);
     navigate_history(frame);
-
 });
+
+// function called to change the icon of status placeholder
+function ScrollStatus() {
+
+    var imgURL = chrome.extension.getURL("images/scroll.png");
+    document.getElementById("status-image").src = imgURL;
+    console.log("scroll icon shown");
+    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
+        'display':'inline',
+        'position':'fixed',
+        'bottom':'13px',
+        'right':'1px',
+        'z-index':'90'
+        }).fadeOut("slow");
+}
+
+//function ClickStatus() {
+//     $("#popup2").css( {'padding':'12px 14px 12px 14px',
+//     'display':'inline',
+//     'bottom':'13px',
+//     'right':'1px',
+//     'z-index':'90'
+//              }).fadeOut( "slow");
+//}
 
 // navigate the history back and forward
 function navigate_history(frame) {
