@@ -2,7 +2,6 @@ Gestures to implement:
 ToDo:
 - Zoom in/out the web page
 - Refresh the browser
-- Navigate backward and forward
 - Navigate backward and forward in tabs
 - Pop up the message if the gesture is unclear to the system
 
@@ -13,3 +12,4 @@ Later:
 
 Done:
 - Scroll up/down the web page
+- Navigate backward and forward

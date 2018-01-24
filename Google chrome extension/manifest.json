@@ -30,8 +30,12 @@
 	"default_title": "Leap Motion Controller",
 	"default_popup": "popup.html"
 },
+"web_accessible_resources": [
+	"images/*"
+],
 "permissions": [
 	"tabs",
-	"storage"
+	"storage",
+	"<all_urls>"
 ]
 }
