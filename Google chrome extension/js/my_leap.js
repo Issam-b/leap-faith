@@ -1,6 +1,32 @@
 console.log("LeapJS v" + Leap.version.full);
 var state = 'Connected';
 
+// Excecute when page fully loaded
+window.onload = function(e) {
+    // add the status icon placeholder to the DOM of the page
+    console.log("DOM element added.");
+    $('body').append('<div id="status-placeholder" style="display: none;"><img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
+
+    //var imgString = '<img src="'.concat(imgURL, '" alt="scrolling" width="150" height="200"/>');
+    document.addEventListener("scroll", function(e) {
+        ScrollStatus();
+        });
+
+    $(window).resize(function() {
+        if(screen.width == window.innerWidth){
+            console.log("Normal");
+        }        
+        else if(screen.width > window.innerWidth){
+            Zoom_in_Status()();
+        } 
+        
+        else {
+            Zoom_out_Status();
+        }
+        });
+    
+ };
+
 window.onkeypress = function(e) {
     if (e.charCode == 32) { // Space bar
         if (state == 'Connected') {
@@ -30,6 +56,8 @@ var curScrollLevel = ({x: 0, y: 0});
 
 var ScrollOn = true;
 
+var cheese = 0;
+
 // create the leap controller instance with parameters
 var controller = new Leap.Controller( {
     enableGestures: true
@@ -41,8 +69,59 @@ controller.loop(function(frame) {
     // draw marker position on screen
     ScrollPage(frame);
     navigate_history(frame);
-
 });
+
+// function called to change the icon of status placeholder
+function ScrollStatus() {
+
+    var imgURL = chrome.extension.getURL("images/scroll.png");
+    document.getElementById("status-image").src = imgURL;
+    console.log("scroll icon shown");
+    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
+        'display':'inline',
+        'position':'fixed',
+        'bottom':'13px',
+        'right':'1px',
+        'z-index':'90'
+        }).fadeOut("slow");
+}
+
+function Zoom_in_Status(){
+
+    var ZoomImage = chrome.extension.getURL("images/zoom-in.png");
+    document.getElementById("status-image").src = ZoomImage;
+    console.log("Zoom Icon show");
+    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
+        'display':'inline',
+        'position':'fixed',
+        'center':'13px',
+        'center':'1px',
+        'z-index':'90'
+        }).fadeOut("slow");
+}
+
+function Zoom_out_Status(){
+
+    var Zoom_out_Image = chrome.extension.getURL("images/zoom-out.png");
+    document.getElementById("status-image").src = Zoom_out_Image;
+    console.log("Zoom out show");
+    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
+        'display':'inline',
+        'position':'fixed',
+        'center':'13px',
+        'center':'1px',
+        'z-index':'90'
+        }).fadeOut("slow");
+}
+
+//function ClickStatus() {
+//     $("#popup2").css( {'padding':'12px 14px 12px 14px',
+//     'display':'inline',
+//     'bottom':'13px',
+//     'right':'1px',
+//     'z-index':'90'
+//              }).fadeOut( "slow");
+//}
 
 // navigate the history back and forward
 function navigate_history(frame) {
@@ -68,7 +147,6 @@ function navigate_history(frame) {
 		}
 	}
 }
-
 
 function ScrollPage(frame) {
 
@@ -118,6 +196,39 @@ function getScrollMax(axis){
         return ( 'scrollMaxX' in window ) ? window.scrollMaxX : (document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
+function ToggleState() {
+    if(state == "Connected") {
+        controller.disconnet();
+        state = 'Disconnected';
+        console.log("deviceDisconnected");
+    } else if(state == "Disonnected") {
+        controller.connet();
+        state = 'Connected';
+        console.log("deviceConnected");
+    }
+}
+
+//Function that currently has the best accuracy.
+controller.on('gesture', function(gesture) {
+	if (gesture.type = 'circle' && cheese >= 40) {
+		location.reload()
+		console.log(gesture.id)}
+	else {
+		cheese++;
+	}
+});
+
+/*
+Make a refresh function that has better accuracy.
+This one has potential, but the cheese one works better for now.
+
+controller.on('gesture', function(gesture) {
+	if (gesture.type = 'circle' && gesture.state == 'stop') {
+		console.log("One complete circle.")
+	}
+});
+*/
+
 controller.on('ready', function() {
     console.log("ready. Service version: " + controller.connection.protocol.serviceVersion);
 });
@@ -154,9 +265,11 @@ controller.on('streamingStopped', function(deviceInfo) {
 });
 
 controller.on('deviceConnected', function() {
+    state = 'Connected';
     console.log("deviceConnected");
 });
 
 controller.on('deviceDisconnected', function() {
+    state = 'Disconnected';
     console.log("deviceDisconnected");
 });
