@@ -5,8 +5,9 @@ var state = 'Connected';
 window.onload = function(e) {
     // add the status icon placeholder to the DOM of the page
     console.log("DOM element added.");
-    $('body').append('<div id="status-placeholder" style="display: none;"><img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
-
+    $('body').append('<div id="status-placeholder" style="display: none;"><img id="status-image" src="" alt="scrolling" \
+    width="128" height="128"/></div><div id="placeholder" style="display: none;"><img id="status-image2" src="" alt="zooming"/></div>');
+    
     //var imgString = '<img src="'.concat(imgURL, '" alt="scrolling" width="150" height="200"/>');
     document.addEventListener("scroll", function(e) {
         ScrollStatus();
@@ -17,7 +18,7 @@ window.onload = function(e) {
             console.log("Normal");
         }        
         else if(screen.width > window.innerWidth){
-            Zoom_in_Status()();
+            Zoom_in_Status();
         } 
         
         else {
@@ -89,28 +90,26 @@ function ScrollStatus() {
 function Zoom_in_Status(){
 
     var ZoomImage = chrome.extension.getURL("images/zoom-in.png");
-    document.getElementById("status-image").src = ZoomImage;
+    document.getElementById("status-image2").src = ZoomImage;
     console.log("Zoom Icon show");
-    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
+    $("#placeholder").css( {'position':'fixed',
         'display':'inline',
-        'position':'fixed',
-        'center':'13px',
-        'center':'1px',
-        'z-index':'90'
+        'top':'50%',
+        'left':'50%',
+        'transform':'translate(-50%, -50%)'
         }).fadeOut("slow");
 }
 
 function Zoom_out_Status(){
 
     var Zoom_out_Image = chrome.extension.getURL("images/zoom-out.png");
-    document.getElementById("status-image").src = Zoom_out_Image;
+    document.getElementById("status-image2").src = Zoom_out_Image;
     console.log("Zoom out show");
-    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
-        'display':'inline',
-        'position':'fixed',
-        'center':'13px',
-        'center':'1px',
-        'z-index':'90'
+    $("#placeholder").css( {'position':'fixed',
+        'display':'inline',       
+        'top':'50%',
+        'left':'50%',
+        'transform':'translate(-50%, -50%)'
         }).fadeOut("slow");
 }
 
