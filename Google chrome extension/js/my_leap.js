@@ -2,7 +2,7 @@
 var appSettings = ({
     extensionOn : true,
     startOn: true,
-    NotificationPos: "bottom",
+    NotificationPos: 'bottom',
     scrollOn: true,
     historyOn: true,
     tabOn: true,
@@ -15,38 +15,32 @@ var appSettings = ({
     },
 });
 
-var leap_status = 'disconnected';
-
-// get saved settings to use on runtime
-function GetSettings() {
-    chrome.storage.sync.get(['extensionOn', 'startOn', 'errorPos', 'scrollOn',
-    'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'scrollStep'], function (items) {
-        appSettings = items;
-    });
-}
-
-// add the status icon placeholder to the DOM of the page
-console.log("DOM element added.");
-$('body').append('<div id="status-placeholder" style="display: none;">' +
-    '<img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
-
-// event listener for scroll
-document.addEventListener("scroll", function(e) {
-    ScrollStatus();
-});
-
 // Variable declarations
+var leap_status;
 var tab_has_focus;
 var lastFramePos = ({x: 0, y: 0});
 var curFramePos = ({x: 0, y: 0});
 var scrollLevel = ({x: 0, y: 0});
 var curScrollLevel = ({x: 0, y: 0});
-
-var cheese = 0;
+var refresh_threshold = 0;
 
 // create the leap controller instance with parameters
 var controller = new Leap.Controller( {
     enableGestures: true
+});
+
+// call GetSettings to fetch stored settings
+GetSettings();
+
+// add DOM element
+AddDOMElement();
+
+// popup message handler to connect/disconnect
+PopUpMessageHandler();
+
+// event listener for scroll
+document.addEventListener("scroll", function(e) {
+    ScrollStatus();
 });
 
 setInterval(check_focus, 1000);
@@ -76,9 +70,10 @@ function check_focus() {
 }
 
 // popup button connect/disconnect handler
-try {
-    console.log("trying to catch that message!");
-    chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
+function PopUpMessageHandler() {
+    try {
+        console.log("trying to catch that message!");
+        chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
             console.log("onMessage data: " + JSON.stringify(request) + " " +
                 JSON.stringify(sender) + " " + JSON.stringify(sendResponse));
             if (request.popUpAction === 'disconnect') {
@@ -90,10 +85,11 @@ try {
                 sendResponse({leap_status: leap_status});
             }
 
-        return true;
-    });
-} catch(error) {
+            return true;
+        });
+    } catch(error) {
         console.error(error.message);
+    }
 }
 
 // run the leap loop, this will be running until disconnected
@@ -195,13 +191,28 @@ function ScrollStatus() {
     }).fadeOut("slow");
 }
 
-//Function that currently has the best accuracy.
+// get saved settings to use on runtime
+function GetSettings() {
+    chrome.storage.sync.get(['extensionOn', 'startOn', 'errorPos', 'scrollOn',
+        'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'scrollStep'], function (items) {
+        appSettings = items;
+    });
+}
+
+// add the status icon placeholder to the DOM of the page
+function AddDOMElement() {
+    console.log("DOM element added.");
+    $('body').append('<div id="status-placeholder" style="display: none;">' +
+        '<img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
+}
+
+//Refresh function that currently has the best accuracy.
 controller.on('gesture', function(gesture) {
-	if (gesture.type = 'circle' && cheese >= 40) {
+	if (gesture.type = 'circle' && refresh_threshold >= 10) {
 		location.reload()
 		console.log(gesture.id)}
 	else {
-		cheese++;
+		refresh_threshold++;
 	}
 });
 
