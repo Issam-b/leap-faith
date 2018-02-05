@@ -75,11 +75,12 @@ function check_focus() {
     }
 }
 
-// popup button listener
+// popup button connect/disconnect handler
 try {
     console.log("trying to catch that message!");
     chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
-            console.log("trying still");
+            console.log("onMessage data: " + JSON.stringify(request) + " " +
+                JSON.stringify(sender) + " " + JSON.stringify(sendResponse));
             if (request.popUpAction === 'disconnect') {
                 controller.disconnect();
                 sendResponse({leap_status: leap_status});
