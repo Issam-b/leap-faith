@@ -4,7 +4,7 @@
     <title>Leap of Faith Settings</title>
     <link rel="stylesheet" href="css/options.css" type="text/css" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
-
+    <script type="application/javascript" src="js/options.js"></script>
 </head>
 <body>
     <div class="container">
@@ -15,7 +15,6 @@
     <br>
    <move> <input type="checkbox" id="Enable_on_startup"/> Enable on startup</move>
  </first>
- <p></p>
  <br>
  
 <br/>
@@ -23,40 +22,43 @@
 <strong>Error/Info notifications</strong> <br/>
 <move><div class="form-check form-check-inline">
   <label class="form-check-label">
-    <input class="form-check-input" type="radio" name="Notifications" id="Notifications1" value="Notifications1"> Center
+    <input class="form-check-input" type="radio" name="Notifications" id="NotificationsCenter" value="Notifications1"> Center
   </label>
 </div>
 <div class="form-check form-check-inline">
   <label class="form-check-label">
-    <input class="form-check-input" type="radio" name="Notifications" id="Notifications2" value="Notifications2"> Bottom right corner
+    <input class="form-check-input" type="radio" name="Notifications" id="NotificationsBottom" value="Notifications2"> Bottom right corner
   </label>
 </div></move></second>
-<p></p>
-<br>
-<br>
+<br><br>
 
 <second>
   <strong>Manage gestures </strong></second>
     <br/>
     <move><input type="checkbox" id="Scroll"/> Scroll</move>
     <br/>
-   <move> <input type="checkbox" id="Page_Movement"/> Previous/Next page </move>
+   <move> <input type="checkbox" id="History_switch"/> Previous/Next page </move>
     <br/>
     <move><input type="checkbox" id="Tab_switch"/> Switch between tabs</move>
     <br/>
-    <move>  <input type="checkbox" id="Tab_close"/> Close tab</move>
-    <p></p>
-    <br>
-    <br>
+    <move>  <input type="checkbox" id="Refresh"/> Refresh tab</move>
+    <br/>
+    <move><input type="checkbox" id="Zoom"/> Zoom in tab</move>
+    <br/>
+    <move>Scroll speed: </move><move id="scrollValue">00 </move><move></move>
+        <input type="range" min="1" max="10" value="5" class="slider" id="ScrollSpeed">
+    <br><br>
 
 
     <second><input type="checkbox" name="Sound"/> Enable notification sound</second>
     <p></p>
     </second>
     <br>
-    
 
-   <second> <button type="button" class="btn btn-secondary btn-lg">Save changes</button></second>
+
+    <second> <button id="save" type="button" class="btn btn-secondary btn-lg">Save changes</button></second>
+    <second> <button id="restore" type="button" class="btn btn-secondary btn-lg">Restore defaults</button></second>
+    <second><strong id="status"></strong></second>
 
     </div>
     </body>

@@ -1,46 +1,13 @@
-console.log("LeapJS v" + Leap.version.full);
-var state = 'Connected';
-
-// Excecute when page fully loaded
-window.onload = function(e) {
-    // add the status icon placeholder to the DOM of the page
-    console.log("DOM element added.");
-    $('body').append('<div id="status-placeholder" style="display: none;"><img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
-
-    //var imgString = '<img src="'.concat(imgURL, '" alt="scrolling" width="150" height="200"/>');
-    document.addEventListener("scroll", function(e) {
-        ScrollStatus();
-        });
-
-    $(window).resize(function() {
-        if(screen.width == window.innerWidth){
-            console.log("Normal");
-        }        
-        else if(screen.width > window.innerWidth){
-            Zoom_in_Status()();
-        } 
-        
-        else {
-            Zoom_out_Status();
-        }
-        });
-    
- };
-
-window.onkeypress = function(e) {
-    if (e.charCode == 32) { // Space bar
-        if (state == 'Connected') {
-            controller.disconnect();
-            state = 'Disconnected';
-        } else {
-            controller.connect();
-            state = 'Connected';
-        }
-    }
-};
-
 // Extension settings
 var appSettings = ({
+    extensionOn : true,
+    startOn: true,
+    NotificationPos: 'bottom',
+    scrollOn: true,
+    historyOn: true,
+    tabOn: true,
+    refreshOn: true,
+    zoomOn: true,
     scrollSpeed: 1,
     scrollStep: {
         x: 5,
@@ -49,19 +16,95 @@ var appSettings = ({
 });
 
 // Variable declarations
+var leap_status;
+var tab_has_focus;
 var lastFramePos = ({x: 0, y: 0});
 var curFramePos = ({x: 0, y: 0});
 var scrollLevel = ({x: 0, y: 0});
 var curScrollLevel = ({x: 0, y: 0});
-
-var ScrollOn = true;
-
-var cheese = 0;
+var refresh_threshold = 0;
 
 // create the leap controller instance with parameters
 var controller = new Leap.Controller( {
     enableGestures: true
 });
+
+// call GetSettings to fetch stored settings
+GetSettings();
+
+// add DOM element
+AddDOMElement();
+
+// popup message handler to connect/disconnect
+PopUpMessageHandler();
+
+// event listener for scroll
+document.addEventListener("scroll", function(e) {
+    ScrollStatus();
+});
+
+// event listener for zoom in and out
+$(window).resize(function() {
+    if(screen.width == window.innerWidth){
+        console.log("Normal");
+    }        
+    else if(screen.width > window.innerWidth){
+        Zoom_in_Status();
+    } 
+    
+    else {
+        Zoom_out_Status();
+    }
+});
+
+setInterval(check_focus, 1000);
+
+// Check if Current Tab has Focus, and only run this extension on the active tab
+function check_focus() {
+    try {
+        chrome.runtime.sendMessage({ tab_status: 'current' }, function(response) {
+            if(response.active && window.location.href == response.url && document.hasFocus()) {
+                tab_has_focus = true;
+            }
+            else {
+                tab_has_focus = false;
+            }
+        });
+    }
+    catch(error) {
+        // If you clicked to reload this extension, you will get this error, which a refresh fixes
+        if(error.message.indexOf('Error connecting to extension') !== -1) {
+            document.location.reload(true);
+        }
+        // Something else went wrong
+        else {
+            console.error(error.message);
+        }
+    }
+}
+
+// popup button connect/disconnect handler
+function PopUpMessageHandler() {
+    try {
+        console.log("trying to catch that message!");
+        chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
+            console.log("onMessage data: " + JSON.stringify(request) + " " +
+                JSON.stringify(sender) + " " + JSON.stringify(sendResponse));
+            if (request.popUpAction === 'disconnect') {
+                controller.disconnect();
+                sendResponse({leap_status: leap_status});
+            }
+            else if (request.popUpAction === 'connect') {
+                controller.connect();
+                sendResponse({leap_status: leap_status});
+            }
+
+            return true;
+        });
+    } catch(error) {
+        console.error(error.message);
+    }
+}
 
 // run the leap loop, this will be running until disconnected
 controller.loop(function(frame) {
@@ -70,58 +113,6 @@ controller.loop(function(frame) {
     ScrollPage(frame);
     navigate_history(frame);
 });
-
-// function called to change the icon of status placeholder
-function ScrollStatus() {
-
-    var imgURL = chrome.extension.getURL("images/scroll.png");
-    document.getElementById("status-image").src = imgURL;
-    console.log("scroll icon shown");
-    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
-        'display':'inline',
-        'position':'fixed',
-        'bottom':'13px',
-        'right':'1px',
-        'z-index':'90'
-        }).fadeOut("slow");
-}
-
-function Zoom_in_Status(){
-
-    var ZoomImage = chrome.extension.getURL("images/zoom-in.png");
-    document.getElementById("status-image").src = ZoomImage;
-    console.log("Zoom Icon show");
-    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
-        'display':'inline',
-        'position':'fixed',
-        'center':'13px',
-        'center':'1px',
-        'z-index':'90'
-        }).fadeOut("slow");
-}
-
-function Zoom_out_Status(){
-
-    var Zoom_out_Image = chrome.extension.getURL("images/zoom-out.png");
-    document.getElementById("status-image").src = Zoom_out_Image;
-    console.log("Zoom out show");
-    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
-        'display':'inline',
-        'position':'fixed',
-        'center':'13px',
-        'center':'1px',
-        'z-index':'90'
-        }).fadeOut("slow");
-}
-
-//function ClickStatus() {
-//     $("#popup2").css( {'padding':'12px 14px 12px 14px',
-//     'display':'inline',
-//     'bottom':'13px',
-//     'right':'1px',
-//     'z-index':'90'
-//              }).fadeOut( "slow");
-//}
 
 // navigate the history back and forward
 function navigate_history(frame) {
@@ -148,6 +139,7 @@ function navigate_history(frame) {
 	}
 }
 
+// scroll function
 function ScrollPage(frame) {
 
     if (frame.pointables.length > 0) {
@@ -191,53 +183,96 @@ function ScrollPage(frame) {
 
 function getScrollMax(axis){
     if (axis == "y")
-        return ( 'scrollMaxY' in window ) ? window.scrollMaxY : (document.documentElement.scrollHeight - document.documentElement.clientHeight);
+        return ( 'scrollMaxY' in window ) ? window.scrollMaxY :
+            (document.documentElement.scrollHeight - document.documentElement.clientHeight);
     if (axis == "x")
-        return ( 'scrollMaxX' in window ) ? window.scrollMaxX : (document.documentElement.scrollWidth - document.documentElement.clientWidth);
+        return ( 'scrollMaxX' in window ) ? window.scrollMaxX :
+            (document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
-function ToggleState() {
-    if(state == "Connected") {
-        controller.disconnet();
-        state = 'Disconnected';
-        console.log("deviceDisconnected");
-    } else if(state == "Disonnected") {
-        controller.connet();
-        state = 'Connected';
-        console.log("deviceConnected");
-    }
+// function called to change the icon of status placeholder
+function ScrollStatus() {
+
+    var imgURL = chrome.extension.getURL("images/scroll.png");
+    document.getElementById("status-image").src = imgURL;
+    console.log("scroll icon shown");
+    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
+        'display':'inline',
+        'position':'fixed',
+        'bottom':'13px',
+        'right':'1px',
+        'z-index':'90'
+    }).fadeOut("slow");
 }
 
-//Function that currently has the best accuracy.
+//function called for the zoom in and zoom out status
+function Zoom_in_Status(){
+
+    var ZoomImage = chrome.extension.getURL("images/zoom-in.png");
+    document.getElementById("status-image2").src = ZoomImage;
+    console.log("Zoom Icon show");
+    $("#placeholder").css( {'position':'fixed',
+        'display':'inline',
+        'top':'50%',
+        'left':'50%',
+        'transform':'translate(-50%, -50%)'
+        }).fadeOut("slow");
+}
+
+function Zoom_out_Status(){
+
+    var Zoom_out_Image = chrome.extension.getURL("images/zoom-out.png");
+    document.getElementById("status-image2").src = Zoom_out_Image;
+    console.log("Zoom out show");
+    $("#placeholder").css( {'position':'fixed',
+        'display':'inline',       
+        'top':'50%',
+        'left':'50%',
+        'transform':'translate(-50%, -50%)'
+        }).fadeOut("slow");
+}
+
+// get saved settings to use on runtime
+function GetSettings() {
+    chrome.storage.sync.get(['extensionOn', 'startOn', 'errorPos', 'scrollOn',
+        'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'scrollStep'], function (items) {
+        appSettings = items;
+    });
+}
+
+// add the status icon placeholder to the DOM of the page
+function AddDOMElement() {
+    console.log("DOM element added.");
+    $('body').append('<div id="status-placeholder" style="display: none;"><img id="status-image" src="" alt="scrolling" \
+    width="128" height="128"/></div><div id="placeholder" style="display: none;"><img id="status-image2" \
+    src="" alt="zooming" width="256" height="256"/></div>');
+}
+
+//Refresh function that currently has the best accuracy.
 controller.on('gesture', function(gesture) {
-	if (gesture.type = 'circle' && cheese >= 40) {
+	if (gesture.type = 'circle' && refresh_threshold >= 10) {
 		location.reload()
 		console.log(gesture.id)}
 	else {
-		cheese++;
+		refresh_threshold++;
 	}
 });
-
-/*
-Make a refresh function that has better accuracy.
-This one has potential, but the cheese one works better for now.
-
-controller.on('gesture', function(gesture) {
-	if (gesture.type = 'circle' && gesture.state == 'stop') {
-		console.log("One complete circle.")
-	}
-});
-*/
 
 controller.on('ready', function() {
+    console.log("LeapJS v" + Leap.version.full);
     console.log("ready. Service version: " + controller.connection.protocol.serviceVersion);
 });
 controller.on('connect', function() {
     console.log("connected with protocol v" + controller.connection.opts.requestProtocolVersion);
+    leap_status = 'connected';
+    chrome.storage.sync.set({leap_status: 'connected'});
 });
 controller.on('disconnect', function() {
     console.log("disconnect");
+    leap_status = 'disconnected';
+    chrome.storage.sync.set({leap_status: 'disconnected'});
 });
+
 controller.on('focus', function() {
     console.log("focus");
 });
@@ -255,6 +290,7 @@ controller.on('deviceStreaming', function(deviceInfo) {
     console.log("deviceStreaming", deviceInfo);
 });
 controller.on('deviceStopped', function(deviceInfo) {
+
     console.log("deviceStopped", deviceInfo);
 });
 controller.on('streamingStarted', function(deviceInfo) {
@@ -262,14 +298,4 @@ controller.on('streamingStarted', function(deviceInfo) {
 });
 controller.on('streamingStopped', function(deviceInfo) {
     console.log("streamingStopped", deviceInfo);
-});
-
-controller.on('deviceConnected', function() {
-    state = 'Connected';
-    console.log("deviceConnected");
-});
-
-controller.on('deviceDisconnected', function() {
-    state = 'Disconnected';
-    console.log("deviceDisconnected");
 });

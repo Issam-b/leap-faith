@@ -3,27 +3,25 @@ p {
 }
 
 body{
-    font-size: 200%;
+    font-size: 100%;
     }
 
 center{
-        margin-bottom: 60px;
+        margin-bottom: 50px;
     }
 
 first, second{
-    margin-left: 50px;
+    margin-left: 40px;
     }
 
 move {
-    margin-left: 90px; 
+    margin-left: 70px; 
 }
 
 .container
 {
-    width: 400px;
-    height: 800px;
-    padding: 50px;
-    margin: 50px;
+    padding: 20px;
+    margin: 20px;
     background: #f8f9fa;
     position: relative;
     border-radius: 25px;

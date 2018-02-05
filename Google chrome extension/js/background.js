@@ -12,7 +12,6 @@ chrome.runtime.onMessage.addListener(
 		else if(request.connection == 'lost')
 		{
 			chrome.browserAction.setBadgeText({text: "OFF"});
-
 			sendResponse({ connection: 'lost' });
 		}
 	}
