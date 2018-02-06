@@ -4,22 +4,21 @@ p {
 
 body {
     font-size: 100%;
-    }
+}
 
-center{
+center {
         margin-bottom: 50px;
-    }
+}
 
-first, second{
+first, second {
     margin-left: 40px;
-    }
+}
 
 move {
     margin-left: 70px;
 }
 
-.container
-{
+.container {
     padding: 20px;
     margin: 20px;
     background: #f8f9fa;

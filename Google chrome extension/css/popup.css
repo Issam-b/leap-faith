@@ -1,7 +1,6 @@
 body {
 	background: #a1a6ac;
 	width: 200px
-	
 }
 section {
 	margin: 15px auto 0;
@@ -14,6 +13,7 @@ section {
 :active, :focus {
 	outline: 0;
 }
+
 /** Font-Face **/
 @font-face {
   font-family: "FontAwesome";

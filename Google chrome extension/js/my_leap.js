@@ -26,8 +26,7 @@ var refresh_threshold = 0;
 var isScrolling;
 var action;
 var connection;
-// TODO: add this to settings
-var connectionTimeOut = 5;
+var connectionTimeOut = 5; // TODO: add this to settings
 var lastCheckTime = new Date().getTime() / 1000;
 var TimeLost;
 var ConnectionLost = false;
@@ -145,6 +144,7 @@ controller.loop(function(frame) {
     ScrollPage(frame);
     navigate_history(frame);
     ZoomMarker(frame);
+
 });
 
 // TODO: remove this test code below
@@ -279,11 +279,9 @@ function GetSettings() {
 }
 
 function FadeStatusImg(state) {
-    // TODO: fix this to fadeout only when scroll is stopped
     // it is not stopping like the actions are in a queue.
     if(state)
         $("#status-placeholder").show();
-    //$("#status-placeholder").fadeIn("slow");
     else
         $("#status-placeholder").fadeOut("slow");
 }
