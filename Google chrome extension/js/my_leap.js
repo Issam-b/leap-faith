@@ -16,7 +16,11 @@ var appSettings = ({
 });
 
 // Variable declarations
+// chrome storage variables
 var leap_status;
+var newCenter = [0, 0, 0];
+
+// other variables
 var tab_has_focus;
 var lastFramePos = ({x: 0, y: 0});
 var curFramePos = ({x: 0, y: 0});
@@ -30,6 +34,8 @@ var connectionTimeOut = 5; // TODO: add this to settings
 var lastCheckTime = new Date().getTime() / 1000;
 var TimeLost;
 var ConnectionLost = false;
+var runOnce = 0;
+var setupConfirm = false, setupDone = false;
 
 // image locations
 var scrollImage = chrome.extension.getURL("images/scroll.png");
@@ -140,12 +146,71 @@ controller.loop(function(frame) {
             return;
     }
 
-    // draw marker position on screen
-    ScrollPage(frame);
-    navigate_history(frame);
-    ZoomMarker(frame);
+    // check frames to decide what gesture and action to do
+    // this part includes also a setup of coordinates center at first run
+    //TODO: add the process to options page as well
+    if (frame.pointables.length > 0) {
+        var position = frame.pointables[0].stabilizedTipPosition;
+        var normalized = frame.interactionBox.normalizePoint(position);
+        var temp = chrome.storage.sync.get('newCenter', function (items) {
+            return items.newCenter;
+        });
+        console.log(temp);
+        // TODO: check value from storage also
+        if(runOnce === 0) {
+
+            NewCenterSetup();
+            runOnce++;
+        }
+        if(setupConfirm) {
+            newCenter = normalized;
+            chrome.storage.sync.set({newCenter: JSON.stringify(newCenter)});
+            chrome.storage.sync.set({setupDone: setupDone});
+            setupDone = true;
+            setupConfirm = false;
+        }
+        console.log("normal: " + normalized);
+        console.log("new: " + NewInteractionBox(normalized));
+    }
+
+    //ScrollPage(frame);
+
+    //navigate_history(frame);
+    //ZoomMarker(frame);
 
 });
+
+// new center setup function
+function NewCenterSetup() {
+    $('body').append('<dialog style="position: fixed" class="modal" id="InteractionSetup">' +
+        '<div class="modal-content">' +
+        '<h3>New Interaction Center Setup</h3>' +
+        '<p>If you wish to change the center of your interaction with the relaxed position of ' +
+        'your hand, please put your hand in that position and click <strong>OK</strong>. Otherwise click ' +
+        '<strong>Cancel</strong>.</p>' +
+        '<br><div>' +
+        '<button id="cancelModal">Cancel</button>' +
+        '<button id="okModal">OK</button>' +
+        '</div></div></dialog>');
+
+    var setupDialog = document.getElementById('InteractionSetup');
+    setupDialog.showModal();
+    document.getElementById('cancelModal').addEventListener('click', function (e) {
+        setupDialog.close();
+    });
+    document.getElementById('okModal').addEventListener('click', function (e) {
+        setupConfirm = true;
+        setupDialog.close();
+    });
+}
+
+// new coordinates for new interactionBox
+function NewInteractionBox(curCenter) {
+    var temp = [0,0,0];
+    for (var i = 0; i < 3; i++)
+        temp[i] = curCenter[i] - newCenter[i];
+    return temp;
+}
 
 // TODO: remove this test code below
 window.onkeypress = function(e) {
@@ -155,7 +220,8 @@ window.onkeypress = function(e) {
     var frame = 1;
         ZoomMarker(frame);
     // }
-}
+};
+
 // navigate the history back and forward
 function navigate_history(frame) {
 	if (frame.gestures.length > 0) {
@@ -183,10 +249,10 @@ function navigate_history(frame) {
 
 // scroll function
 function ScrollPage(frame) {
-
     if (frame.pointables.length > 0) {
         var position = frame.pointables[0].stabilizedTipPosition;
         var normalized = frame.interactionBox.normalizePoint(position);
+
         curFramePos.x = window.innerWidth * normalized[0];
         curFramePos.y = window.innerHeight * (1 - normalized[1]);
         // TODO: check if hand lost or not before taking the last and current frame difference to scroll
@@ -233,6 +299,30 @@ function getScrollMax(axis){
             (document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
+// Zoom function
+function ZoomMarker(frame) {
+
+    //var hands = frame.hands[0];
+    var hands = 1000;
+    //if(frame.hands.length > 0) // zoom the page by transforming css.
+
+    $('html').css({
+        'transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
+        '-webkit-transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
+        'transformation-origin': 'center center'
+    });
+}
+
+//Refresh function that currently has the best accuracy.
+// controller.on('gesture', function(gesture) {
+//     if (gesture.type = 'circle' && refresh_threshold >= 10) {
+//         location.reload()
+//         console.log(gesture.id)}
+//     else {
+//         refresh_threshold++;
+//     }
+// });
+
 // function called to change the icon of status placeholder
 function UpdateStatusImage() {
     // check which image to use according to current action
@@ -254,20 +344,6 @@ function StatusMessage(message, color) {
         $("#leap-notification").css({'background-color': '#3aff31'});
     $("#leap-notification").fadeIn("slow").append(message);
     $("#leap-notification").fadeTo(3000, 500).fadeOut("slow");
-}
-
-// Zoom function
-function ZoomMarker(frame) {
-
-    //var hands = frame.hands[0];
-    var hands = 1000;
-    //if(frame.hands.length > 0) // zoom the page by transforming css.
-
-    $('html').css({
-        'transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
-        '-webkit-transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
-        'transformation-origin': 'center center'
-    });
 }
 
 // get saved settings to use on runtime
@@ -318,16 +394,7 @@ function ShowDOMs(state) {
 
 }
 
-//Refresh function that currently has the best accuracy.
-controller.on('gesture', function(gesture) {
-	if (gesture.type = 'circle' && refresh_threshold >= 10) {
-		location.reload()
-		console.log(gesture.id)}
-	else {
-		refresh_threshold++;
-	}
-});
-
+// leap events
 controller.on('ready', function() {
     console.log("LeapJS v" + Leap.version.full);
     console.log("ready. Service version: " + controller.connection.protocol.serviceVersion);
