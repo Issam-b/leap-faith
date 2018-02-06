@@ -21,6 +21,7 @@
 			"js/leap-plugins-0.1.12.min.js",
 			"js/my_leap.js"
 		],
+		"css": ["css/content_page.css"],
 		"run_at" : "document_idle",
 		"all_frames": false
 	}

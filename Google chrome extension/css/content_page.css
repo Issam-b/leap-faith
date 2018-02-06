@@ -1,0 +1,35 @@
+/*notification css*/
+#leap-notification {
+    position:fixed;
+    top:0px;
+    height: 5%;
+    z-index:1050;
+    left: 45%;
+    text-align:center;
+    font-weight:normal;
+    font-size:18px;
+    font-weight:bold;
+    color:white;
+    padding:5px;
+    border-radius: 3px;
+}
+#notification span.dismiss {
+    border:2px solid #FFF;
+    padding:0 5px;
+    cursor:pointer;
+    float:right;
+    margin-right:10px;
+}
+#notification a {
+    color:white;
+    text-decoration:none;
+    font-weight:bold;
+}
+
+#status-placeholder {
+    padding: 12px 14px 12px 14px;
+    position: fixed;
+    bottom: 13px;
+    right: 1px;
+    z-index: 90;
+}

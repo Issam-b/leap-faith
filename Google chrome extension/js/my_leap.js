@@ -23,6 +23,19 @@ var curFramePos = ({x: 0, y: 0});
 var scrollLevel = ({x: 0, y: 0});
 var curScrollLevel = ({x: 0, y: 0});
 var refresh_threshold = 0;
+var isScrolling;
+var action;
+var connection;
+// TODO: add this to settings
+var connectionTimeOut = 5;
+var lastCheckTime = new Date().getTime() / 1000;
+var TimeLost;
+var ConnectionLost = false;
+
+// image locations
+var scrollImage = chrome.extension.getURL("images/scroll.png");
+var zoomImage = chrome.extension.getURL("images/zoom.png");
+var refreshImage = chrome.extension.getURL("images/refresh.png");
 
 // create the leap controller instance with parameters
 var controller = new Leap.Controller( {
@@ -36,16 +49,24 @@ GetSettings();
 AddDOMElement();
 
 // popup message handler to connect/disconnect
-PopUpMessageHandler();
+MessagingHandler();
 
 // event listener for scroll
+//TODO: add all events to one function with action selection
 document.addEventListener("scroll", function(e) {
-    ScrollStatus();
-});
-
-setInterval(check_focus, 1000);
+    UpdateStatusImage();
+    // Clear our timeout throughout the scroll
+    window.clearTimeout( isScrolling );
+    // Set a timeout to run after scrolling ends
+    isScrolling = setTimeout(function() {
+        // Run the callback
+        console.log( 'Scrolling has stopped.' );
+        FadeStatusImg(false);
+    }, 300);
+}, false);
 
 // Check if Current Tab has Focus, and only run this extension on the active tab
+setInterval(check_focus, 1000);
 function check_focus() {
     try {
         chrome.runtime.sendMessage({ tab_status: 'current' }, function(response) {
@@ -69,17 +90,32 @@ function check_focus() {
     }
 }
 
+// check connection of leap device
+connection = setInterval(CheckConnection, 1000);
+function CheckConnection() {
+    var currentTime = new Date().getTime() / 1000;
+    if(currentTime - lastCheckTime > connectionTimeOut && !ConnectionLost) {
+        clearInterval(connection);
+        console.log("connection lost!");
+        StatusMessage("Connection to device have been lost!", 'error');
+        ConnectionLost = true;
+        //TODO: use timeLost to implement a second notification after another period of time
+        TimeLost = currentTime;
+    }
+}
+
 // popup button connect/disconnect handler
-function PopUpMessageHandler() {
+function MessagingHandler() {
     try {
-        console.log("trying to catch that message!");
         chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
             console.log("onMessage data: " + JSON.stringify(request) + " " +
                 JSON.stringify(sender) + " " + JSON.stringify(sendResponse));
+            // disconnect command from popup button
             if (request.popUpAction === 'disconnect') {
                 controller.disconnect();
                 sendResponse({leap_status: leap_status});
             }
+            // connect command from popup button
             else if (request.popUpAction === 'connect') {
                 controller.connect();
                 sendResponse({leap_status: leap_status});
@@ -90,16 +126,36 @@ function PopUpMessageHandler() {
     } catch(error) {
         console.error(error.message);
     }
+
+
 }
 
 // run the leap loop, this will be running until disconnected
 controller.loop(function(frame) {
+    // save current time of successful frame data fetch from device
+    lastCheckTime = new Date().getTime() / 1000;
+    ConnectionLost = false;
+
+    // if current tab doesn't have focus or the leap is disconnected exit loop
+    if(!tab_has_focus) {
+            return;
+    }
 
     // draw marker position on screen
     ScrollPage(frame);
     navigate_history(frame);
+    ZoomMarker(frame);
 });
 
+// TODO: remove this test code below
+window.onkeypress = function(e) {
+    console.log("attempt zoom 1");
+    // if (e.charCode == 65) { // Space bar
+    //     console.log("attempt zoom 1");
+    var frame = 1;
+        ZoomMarker(frame);
+    // }
+}
 // navigate the history back and forward
 function navigate_history(frame) {
 	if (frame.gestures.length > 0) {
@@ -119,8 +175,8 @@ function navigate_history(frame) {
 						console.log('Previous Page');
 						continue loop;
 					}
-				}        
-			}	 
+				}
+			}
 		}
 	}
 }
@@ -167,6 +223,7 @@ function ScrollPage(frame) {
     }
 }
 
+// get value of max scroll possible on the current page
 function getScrollMax(axis){
     if (axis == "y")
         return ( 'scrollMaxY' in window ) ? window.scrollMaxY :
@@ -177,18 +234,40 @@ function getScrollMax(axis){
 }
 
 // function called to change the icon of status placeholder
-function ScrollStatus() {
+function UpdateStatusImage() {
+    // check which image to use according to current action
+    if(isScrolling) {
+        var imgURL = scrollImage;
+        console.log("scroll icon shown");
+    }
 
-    var imgURL = chrome.extension.getURL("images/scroll.png");
+    // assign image
     document.getElementById("status-image").src = imgURL;
-    console.log("scroll icon shown");
-    $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
-        'display':'inline',
-        'position':'fixed',
-        'bottom':'13px',
-        'right':'1px',
-        'z-index':'90'
-    }).fadeOut("slow");
+    FadeStatusImg(true);
+}
+
+// Show a message notification of status
+function StatusMessage(message, color) {
+    if (color === 'error')
+        $("#leap-notification").css({'background-color': '#ff6519'});
+    else if (color === 'info')
+        $("#leap-notification").css({'background-color': '#3aff31'});
+    $("#leap-notification").fadeIn("slow").append(message);
+    $("#leap-notification").fadeTo(3000, 500).fadeOut("slow");
+}
+
+// Zoom function
+function ZoomMarker(frame) {
+
+    //var hands = frame.hands[0];
+    var hands = 1000;
+    //if(frame.hands.length > 0) // zoom the page by transforming css.
+
+    $('html').css({
+        'transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
+        '-webkit-transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
+        'transformation-origin': 'center center'
+    });
 }
 
 // get saved settings to use on runtime
@@ -199,11 +278,46 @@ function GetSettings() {
     });
 }
 
+function FadeStatusImg(state) {
+    // TODO: fix this to fadeout only when scroll is stopped
+    // it is not stopping like the actions are in a queue.
+    if(state)
+        $("#status-placeholder").show();
+    //$("#status-placeholder").fadeIn("slow");
+    else
+        $("#status-placeholder").fadeOut("slow");
+}
+
 // add the status icon placeholder to the DOM of the page
 function AddDOMElement() {
-    console.log("DOM element added.");
+    // DOM for status image
+    console.log("Add status image DOM");
     $('body').append('<div id="status-placeholder" style="display: none;">' +
         '<img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
+
+    // DOM for Connection status on top of page
+    console.log("Add status top message DOM");
+    window.onload = function () {
+        var StatusAppendPos;
+        if(document.querySelectorAll('header').length > 0)
+            StatusAppendPos = 'header';
+        else
+            StatusAppendPos = 'body';
+        $(StatusAppendPos).append('<div id="leap-notification" style="display: none"></div>');
+    }
+}
+
+// hide DOM elements
+function ShowDOMs(state) {
+    if (state) {
+        $("#leap-notification").hide();
+        $("status-placeholder").hide();
+    }
+    else {
+        $("#leap-notification").show();
+        $("status-placeholder").show();
+    }
+
 }
 
 //Refresh function that currently has the best accuracy.

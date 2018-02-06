@@ -9,10 +9,5 @@ chrome.runtime.onMessage.addListener(
 				url: sender.tab.url
 			});
 		}
-		else if(request.connection == 'lost')
-		{
-			chrome.browserAction.setBadgeText({text: "OFF"});
-			sendResponse({ connection: 'lost' });
-		}
 	}
 );
