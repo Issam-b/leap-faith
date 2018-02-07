@@ -18,16 +18,22 @@ var appSettings = ({
         x: 10,
         y: 10
     },
+    connectionTimeOut: 5
 });
 
 // Variable declarations
 // chrome storage variables
 var leap_status;
 var newCenter = [0, 0, 0];
+// TODO: add to settings
+var setupDone = false;
+var fpsScaleFactor = 10;
+var discreteActionDelay = 500;
 
 // other variables
 var tab_has_focus;
 var lastFramePos = ({x: 0, y: 0});
+var lastFrame, lastExtendedFingers = 0;
 var curFramePos = ({x: 0, y: 0});
 var scrollValue = ({x: 0, y: 0});
 var scrollSpeed = ({
@@ -35,24 +41,28 @@ var scrollSpeed = ({
     y: getScrollMax("y") / appSettings.scrollStep.y
 });
 
-var isScrolling;
+var isScrolling, isZooming;
 var action;
 var connection, messageInterval;
-var connectionTimeOut = 5; // TODO: add this to settings
 var lastCheckTime = new Date().getTime() / 1000;
 var TimeLost;
 var ConnectionLost = false;
 var runOnce = 0;
-var setupConfirm = false, setupDone = false;
-var fpsScaleFactor = 20;
+var setupConfirm = false;
 var setupModalOpen = false;
-var discreteActionDelay = 500;
 
 // image locations
+var imgURL;
 var scrollImage = chrome.extension.getURL("images/scroll.png");
-var zoomImage = chrome.extension.getURL("images/zoom.png");
+var zoomInImage = chrome.extension.getURL("images/zoomIn.png");
+var zoomOutImage = chrome.extension.getURL("images/zoomOut.png");
 var refreshImage = chrome.extension.getURL("images/refresh.png");
-
+var historyRightImage = chrome.extension.getURL("images/history_right.png");
+var historyLeftImage = chrome.extension.getURL("images/history_left.png");
+var tabRightImage = chrome.extension.getURL("images/tab_right.png");
+var tabLeftImage = chrome.extension.getURL("images/tab_left.png");
+var connectedImage = chrome.extension.getURL("images/connected.png");
+var disconnectedImage = chrome.extension.getURL("images/disconnected.png");
 // create the leap controller instance with parameters
 var controller = new Leap.Controller( {
     enableGestures: true
@@ -70,17 +80,18 @@ MessagingHandler();
 
 // handle the scroll icon display and hide
 //TODO: add all events to one function with action selection
-function showScroll() {
-    UpdateStatusImage('scroll');
-    // Clear our timeout throughout the scroll
-    window.clearTimeout( isScrolling );
-    // Set a timeout to run after scrolling ends
-    isScrolling = setTimeout(function() {
-        // Run the callback
-        // console.log( 'Scrolling has stopped.' );
-        FadeStatusImg(false);
-    },  fpsScaleFactor * 20);
-};
+// function updateStatusImageCont(action) {
+//
+//     UpdateStatusImage('scroll');
+//     // Clear our timeout throughout the scroll
+//     window.clearTimeout( isScrolling );
+//     // Set a timeout to run after scrolling ends
+//     isScrolling = setTimeout(function() {
+//         // Run the callback
+//         // console.log( 'Scrolling has stopped.' );
+//         FadeStatusImg(false);
+//     },  fpsScaleFactor * 20);
+// }
 
 // Check if Current Tab has Focus, and only run this extension on the active tab
 setInterval(check_focus, 1000);
@@ -111,15 +122,23 @@ function check_focus() {
 connection = setInterval(CheckConnection, 1000);
 function CheckConnection() {
     var currentTime = new Date().getTime() / 1000;
-    if(currentTime - lastCheckTime > connectionTimeOut && !ConnectionLost) {
+    if(currentTime - lastCheckTime > appSettings.connectionTimeOut && !ConnectionLost) {
         clearInterval(connection);
         console.log("connection lost!");
         messageInterval = setInterval(StatusMessage("Connection to device have been lost!", 'error'), 5000);
         ConnectionLost = true;
+        leap_status = 'disconnected';
+        // TODO: fix this tomorrow !!!!
+        //chrome.storage.sync.set({leap_status: 'disconnected'});
+        UpdateStatusImage('disconnected');
+        //TODO: add confition when the leap crashes, restart it or reload browser
         //TODO: use timeLost to implement a second notification after another period of time
         TimeLost = currentTime;
     }
+    //chrome.storage.sync.set({leap_status: 'connected'});
+    leap_status = 'connected';
 }
+
 
 // popup button connect/disconnect handler
 function MessagingHandler() {
@@ -151,6 +170,8 @@ var fpsCounter = -1;
 // run the leap loop, this will be running until disconnected
 controller.loop(function(frame) {
     // console.log("start leap loop");
+    if(action === 'none')
+            UpdateStatusImage('connected');
 
     // save current time of successful frame data fetch from device
     lastCheckTime = new Date().getTime() / 1000;
@@ -171,8 +192,7 @@ controller.loop(function(frame) {
     // check frames to decide what gesture and action to do
     // this part includes also a setup of coordinates center at first run
     //TODO: add the process to options page as well
-    if (frame.pointables.length > 0) {
-        var position = frame.pointables[0].stabilizedTipPosition;
+    if (frame.valid && frame.pointables.length > 0) {
         var position = frame.pointables[0].stabilizedTipPosition;
         var normalized = frame.interactionBox.normalizePoint(position);
         var temp = chrome.storage.sync.get('newCenter', function (items) {
@@ -209,15 +229,33 @@ controller.loop(function(frame) {
                 extendedFingers++;
         }
 
-        // if there's 5 extended fingers go with scroll gesture
-        if (extendedFingers === 5) {
-            // console.log("all fingers extended");
-            curFramePos.x = NewInteractionBox(normalized)[0] * window.innerWidth;
-            curFramePos.y = (1 - NewInteractionBox(normalized)[1]) * window.innerHeight;
-            action = 'scroll';
+        // if there's 5 extended fingers go with scroll or history navigation gesture
+        if (extendedFingers === 5 && lastExtendedFingers === 5) {
+            // history navigation gesture
+            if(frame.valid && frame.gestures.length > 0) {
+                var gesture = frame.gestures[0];
+                if(gesture.type === 'swipe') {
+                    var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
+                    if(isHorizontal) {
+                        if (gesture.direction[0] > 0) {
+                            action = 'move_history_right';
+                        } else {
+                            action = 'move_history_left';
+                        }
+                    }
+                }
+            }
+            // TODO: fix a trigger to scroll
+            // scroll gesture
+            // console.log("action: " + action);
+            //if(action === 'none') {
+                curFramePos.x = NewInteractionBox(normalized)[0] * window.innerWidth;
+                curFramePos.y = (1 - NewInteractionBox(normalized)[1]) * window.innerHeight;
+                action = 'scroll';
+            //}
         }
         // refresh gesture
-        else if (extendedFingers == 1) {
+        else if (extendedFingers == 1 && lastExtendedFingers === 1) {
             if(frame.valid && frame.gestures.length > 0) {
                 frame.gestures.forEach( function (gesture) {
                     var pointableIds = gesture.pointableIds;
@@ -230,36 +268,79 @@ controller.loop(function(frame) {
                 });
             }
         }
+        // tab move gesture
+        else if (extendedFingers == 3 && lastExtendedFingers === 3) {
+            if(frame.valid && frame.gestures.length > 0) {
+                var gesture = frame.gestures[0];
+                if(gesture.type === 'swipe') {
+                    var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
+                    if(isHorizontal) {
+                        if (gesture.direction[0] > 0) {
+                            action = 'move_tab_right';
+                        } else {
+                            action = 'move_tab_left';
+                        }
+                    }
+                }
+            }
+        }
+        // zoom gesture if thumb and index fingers are extended
+        else if(extendedFingers === 2 && lastExtendedFingers === 2 && fingersList[0].extended && fingersList[1].extended) {
+            console.log("zooming ohooo");
+            console.log("thumb " + fingersList[0].pipPosition + "index " + fingersList[1].pipPosition);
+        }
         else
-            action = '';
+            action = 'none';
 
         // apply actions
+        console.log("action " + action);
         switch (action) {
             case 'scroll':
                 ScrollPage(curFramePos);
-                showScroll();
+                console.log("scroll image");
+                UpdateStatusImage('scroll');
                 break;
             case 'zoom':
-                // code
+                if(scale >= 0)
+                    UpdateStatusImage('zoomIn');
+                if(scale < 0)
+                    UpdateStatusImage('zoomOut');
+                zoomPage(scale);
                 break;
             case 'refresh':
                 UpdateStatusImage('refresh');
                 setTimeout(RefreshPage, discreteActionDelay);
                 break;
-            case 'move_history':
-                // code
+            case 'move_history_right':
+                UpdateStatusImage('move_history_right');
+                setTimeout( function() { navigateHistory('right'); }, discreteActionDelay);
                 break;
-            case 'change_tabs':
-                // code
+            case 'move_history_left':
+                UpdateStatusImage('move_history_left');
+                navigateHistory('left');
+                setTimeout( function() { navigateHistory('left'); }, discreteActionDelay);
                 break;
-            default:
-            // default code
+            case 'move_tab_right':
+                UpdateStatusImage('move_tab_right');
+                setTimeout( function() { navigateTabs('right'); }, discreteActionDelay);
+                break;
+            case 'move_tab_left':
+                UpdateStatusImage('move_tab_left');
+                navigateHistory('left');
+                setTimeout( function() { navigateTabs('left'); }, discreteActionDelay);
+                break;
+            case 'none':
+                console.log(leap_status);
+                if(leap_status === 'connected')
+                    UpdateStatusImage('connected');
+                else
+                    UpdateStatusImage('disconnected');
+                break;
         }
-
+        lastFrame = frame;
+        lastExtendedFingers = extendedFingers;
     }
 
-    //navigate_history(frame);
-    //ZoomMarker(frame);
     // console.log("end leap loop");
 });
 
@@ -305,33 +386,37 @@ window.onkeypress = function(e) {
     // if (e.charCode == 65) { // Space bar
     //     console.log("attempt zoom 1");
     var frame = 1;
-        ZoomMarker(frame);
+        zoomPage(frame);
     // }
 };
 
 // navigate the history back and forward
-function navigate_history(frame) {
-	if (frame.gestures.length > 0) {
-		loop: for (var i = 0; i < frame.gestures.length; i++) {
-			var gesture = frame.gestures[i];
-			if(gesture.type == "swipe") {
-				//Classify swipe as either horizontal or vertical
-				var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
-				//Classify as right-left or up-down
-				if(isHorizontal){
-					if(gesture.direction[0] > 0){
-						history.forward();
-						console.log('Next Page');
-						continue loop;
-					} else {
-						history.back();
-						console.log('Previous Page');
-						continue loop;
-					}
-				}
-			}
-		}
-	}
+function navigateHistory (direction) {
+    if(direction === 'right') {
+        console.log('Next Page');
+        history.forward();
+    }
+    else if(direction === 'left'){
+        console.log('Previous Page');
+        history.back();
+    }
+}
+
+// navigate tabs function
+//TODO: not finished yet
+function navigateTabs (direction) {
+    // get list of tabs
+    // chrome.tabs.query({}, function(tabs) {
+    //
+    // });
+    if(direction === 'right') {
+        console.log('Next tab');
+        history.forward();
+    }
+    else if(direction === 'left'){
+        console.log('Previous tab');
+        history.back();
+    }
 }
 
 // scroll function
@@ -382,16 +467,11 @@ function getScrollMax(axis){
 }
 
 // Zoom function
-function ZoomMarker(frame) {
-
-    //var hands = frame.hands[0];
-    var hands = 1000;
-    //if(frame.hands.length > 0) // zoom the page by transforming css.
-
+function zoomPage(scale) {
     $('html').css({
-        'transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
-        '-webkit-transform': 'scale(' + hands._scaleFactor + ') translateZ(0)',
-        'transformation-origin': 'center center'
+        'zoom': scale,
+        '-moz-transform': 'scale(' + scale + ')',
+        '-webkit-transform': 'scale(' + scale + ')'
     });
 }
 
@@ -404,14 +484,40 @@ function RefreshPage() {
 // function called to change the icon of status placeholder
 function UpdateStatusImage(action) {
     // check which image to use according to current action
-    var imgURL;
-    if(action === 'scroll' && isScrolling) {
-        imgURL = scrollImage;
+    if(action === 'scroll') {
         // console.log("scroll icon shown");
+        imgURL = scrollImage;
+        window.clearTimeout( isScrolling );
+        isScrolling = setTimeout(function() {
+            // fade out image when action stops
+            FadeStatusImg(false);
+        },  fpsScaleFactor * 20);
     }
     else if (action === 'refresh')
-        imgURL = refreshImage;
-
+        imgURL = refreshImage
+    else if (action === 'move_history_right')
+        imgURL = historyRightImage;
+    else if (action === 'move_history_left')
+        imgURL = historyLeftImage;
+    else if (action === 'move_tab_left')
+        imgURL = tabLeftImage;
+    else if (action === 'move_tab_right')
+        imgURL = tabRightImage;
+    else if (action === 'zoomIn' || action === 'zoomOut') {
+        if(action === 'zoomIn')
+            imgURL = zoomInImage;
+        if(action === 'zoomOut')
+            imgURL = zoomOutImage;
+        window.clearTimeout( isZooming );
+        isZooming = setTimeout(function() {
+            // fade out image when action stops
+            FadeStatusImg(false);
+        },  fpsScaleFactor * 20);
+    }
+    else if(action === 'connected')
+        imgURL = connectedImage;
+    else if(action === 'disconnected')
+        imgURL = disconnectedImage;
 
     // assign image
     document.getElementById("status-image").src = imgURL;
@@ -431,7 +537,8 @@ function StatusMessage(message, color) {
 // get saved settings to use on runtime
 function GetSettings() {
     chrome.storage.sync.get(['extensionOn', 'startOn', 'errorPos', 'scrollOn',
-        'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'scrollStep'], function (items) {
+        'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'continuousScroll',
+        'scrollThreshold', 'scrollStep', 'connectionTimeOut'], function (items) {
         appSettings = items;
     });
 }
@@ -463,7 +570,7 @@ function AddDOMElement() {
     }
 }
 
-// hide DOM elements
+// show and hide DOM elements
 function ShowDOMs(state) {
     if (state) {
         $("#leap-notification").hide();
