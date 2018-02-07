@@ -172,7 +172,7 @@ function ScrollPage(frame) {
             if(curScrollLevel.x + scrollLevel.x < getScrollMax("x"))
                 curScrollLevel.x += scrollLevel.x;
             else
-                curScrollLevel.x = getScrollMax("x")
+                curScrollLevel.x = getScrollMax("x");
 
             // logs
             console.log("hand change level X: " + scrollLevel.y);
@@ -208,7 +208,7 @@ function ScrollStatus() {
 //function called for the zoom in and zoom out status
 function Zoom_in_Status(){
 
-    var ZoomImage = chrome.extension.getURL("images/zoom-in.png");
+    var ZoomImage = chrome.extension.getURL("images/zoom_in.gif");
     document.getElementById("status-image").src = ZoomImage;
     console.log("Zoom Icon show");
     $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
@@ -222,7 +222,7 @@ function Zoom_in_Status(){
 
 function Zoom_out_Status(){
 
-    var Zoom_out_Image = chrome.extension.getURL("images/zoom-out.png");
+    var Zoom_out_Image = chrome.extension.getURL("images/zoom_out.gif");
     document.getElementById("status-image").src = Zoom_out_Image;
     console.log("Zoom out show");
     $("#status-placeholder").css( {'padding':'12px 14px 12px 14px',
@@ -246,7 +246,7 @@ function GetSettings() {
 function AddDOMElement() {
     console.log("DOM element added.");
     $('body').append('<div id="status-placeholder" style="display: none;"><img id="status-image" src="" alt="scrolling" \
-    width="128" height="128"/>');
+    />');
 }
 
 //Refresh function that currently has the best accuracy.
