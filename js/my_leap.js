@@ -1,35 +1,80 @@
-// Extension settings
-var appSettings = ({
-    extensionOn : true,
-    startOn: true,
-    NotificationPos: 'bottom',
-    scrollOn: true,
-    historyOn: true,
-    tabOn: true,
-    refreshOn: true,
-    zoomOn: true,
-    scrollSpeed: 1,
-    continuousScroll: false,
-    scrollThreshold: {
-        x: 10,
-        y: 10
-    },
-    scrollStep: {
-        x: 10,
-        y: 10
-    },
-    connectionTimeOut: 5
+//TODO: settings saving first run in here
+// Extension settings variable declaration
+var appSettings = ({});
+var scrollSpeed;
+chrome.storage.local.get(['setupDone', 'extensionOn', 'startOn', 'errorPos', 'scrollOn',
+    'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'continuousScroll',
+    'scrollThresholdX', 'scrollThresholdY', 'scrollStepX', 'scrollStepY', 'connectionTimeOut', 'fpsScaleFactor',
+    'discreteActionDelay', 'refreshThreshold', 'historyThreshold', 'firstSettings', 'newCenter'], function (items) {
+    if(typeof(items.setupDone) === "undefined") {
+        chrome.storage.local.set({setupDone: false});
+        chrome.storage.local.set({newCenter: {0: 0, 1: 0, 2: 0}});
+        if(typeof(items.firstSettings) === "undefined" ) {
+            console.log("Setting first run settings");
+            chrome.storage.local.set({
+                extensionOn: true,
+                startOn: true,
+                NotificationPos: 'bottom',
+                scrollOn: true,
+                historyOn: true,
+                tabOn: true,
+                refreshOn: true,
+                zoomOn: true,
+                scrollSpeed: 1,
+                continuousScroll: false,
+                scrollThresholdX: 10,
+                scrollThresholdY: 10,
+                scrollStepX: 15,
+                scrollStepY: 10,
+                connectionTimeOut: 5,
+                fpsScaleFactor: 10,
+                discreteActionDelay: 500,
+                refreshThreshold: 2,
+                historyThreshold: 1,
+                firstSettings: true
+            });
+        }
+    }
+    else {
+        appSettings.setupDone = items.setupDone;
+        appSettings.extensionOn = items.extensionOn;
+        appSettings.startOn = items.startOn;
+        appSettings.errorPos = items.errorPos;
+        appSettings.scrollOn = items.scrollOn;
+        appSettings.historyOn = items.historyOn;
+        appSettings.tabOn = items.tabOn;
+        appSettings.refreshOn = items.refreshOn;
+        appSettings.zoomOn = items.zoomOn;
+        appSettings.scrollSpeed = items.scrollSpeed;
+        appSettings.continuousScroll = items.continuousScroll;
+        appSettings.scrollThresholdX = items.scrollThresholdX;
+        appSettings.scrollThresholdY = items.scrollThresholdY;
+        appSettings.scrollStepX = items.scrollStepX;
+        appSettings.scrollStepY = items.scrollStepY;
+        appSettings.connectionTimeOut = items.connectionTimeOut;
+        appSettings.fpsScaleFactor = items.fpsScaleFactor;
+        appSettings.discreteActionDelay = items.discreteActionDelay;
+        appSettings.refreshThreshold = items.refreshThreshold;
+        appSettings.historyThreshold = items.historyThreshold;
+        appSettings.firstSettings = items.firstSettings;
+        appSettings.newCenter = items.newCenter;
+
+        // set some other variables
+        //appSettings.setupDone = false;
+        scrollSpeed = ({
+            x: getScrollMax('x') / appSettings.scrollStepX,
+            y: getScrollMax('y') / appSettings.scrollStepY
+        });
+    }
 });
+
+
 
 // Variable declarations
 // chrome storage variables
 var leap_status;
-var newCenter = [0, 0, 0];
-// TODO: add to settings
-var setupDone = false;
-var fpsScaleFactor = 10;
-var discreteActionDelay = 500;
-var refreshThreshold = 1, curRefreshCount = 0;
+var curRefreshCount = 0;
+var curHistoryCount = 0;
 
 // other variables
 var tab_has_focus;
@@ -37,18 +82,13 @@ var lastFramePos = ({x: 0, y: 0});
 var lastFrame, lastExtendedFingers = 0;
 var curFramePos = ({x: 0, y: 0});
 var scrollValue = ({x: 0, y: 0});
-var scrollSpeed = ({
-    x: getScrollMax("x") / appSettings.scrollStep.x,
-    y: getScrollMax("y") / appSettings.scrollStep.y
-});
 
 var isScrolling, isZooming;
-var action;
+var action = 'none', lastAction = 'none';
 var connection, messageInterval;
 var lastCheckTime = new Date().getTime() / 1000;
 var TimeLost;
 var ConnectionLost = false;
-var runOnce = 0;
 var setupConfirm = false;
 var setupModalOpen = false;
 
@@ -64,35 +104,17 @@ var tabRightImage = chrome.extension.getURL("images/tab_right.png");
 var tabLeftImage = chrome.extension.getURL("images/tab_left.png");
 var connectedImage = chrome.extension.getURL("images/connected.png");
 var disconnectedImage = chrome.extension.getURL("images/disconnected.png");
+
 // create the leap controller instance with parameters
 var controller = new Leap.Controller( {
     enableGestures: true
 });
-
-// call GetSettings to fetch stored settings
-//TODO: fix later
-//GetSettings();
 
 // add DOM element
 AddDOMElement();
 
 // popup message handler to connect/disconnect
 MessagingHandler();
-
-// handle the scroll icon display and hide
-//TODO: add all events to one function with action selection
-// function updateStatusImageCont(action) {
-//
-//     UpdateStatusImage('scroll');
-//     // Clear our timeout throughout the scroll
-//     window.clearTimeout( isScrolling );
-//     // Set a timeout to run after scrolling ends
-//     isScrolling = setTimeout(function() {
-//         // Run the callback
-//         // console.log( 'Scrolling has stopped.' );
-//         FadeStatusImg(false);
-//     },  fpsScaleFactor * 20);
-// }
 
 // Check if Current Tab has Focus, and only run this extension on the active tab
 setInterval(check_focus, 1000);
@@ -119,24 +141,25 @@ function check_focus() {
     }
 }
 
+// TODO: send message to background
 // check connection of leap device
 connection = setInterval(CheckConnection, 1000);
 function CheckConnection() {
     var currentTime = new Date().getTime() / 1000;
     if(currentTime - lastCheckTime > appSettings.connectionTimeOut && !ConnectionLost) {
         clearInterval(connection);
-        console.log("connection lost!");
+        console.log("Connection lost!");
         messageInterval = setInterval(StatusMessage("Connection to device have been lost!", 'error'), 5000);
         ConnectionLost = true;
         leap_status = 'disconnected';
         // TODO: fix this tomorrow !!!!
-        //chrome.storage.sync.set({leap_status: 'disconnected'});
+        //chrome.storage.local.set({leap_status: 'disconnected'});
         UpdateStatusImage('disconnected');
         //TODO: add confition when the leap crashes, restart it or reload browser
         //TODO: use timeLost to implement a second notification after another period of time
         TimeLost = currentTime;
     }
-    //chrome.storage.sync.set({leap_status: 'connected'});
+    //chrome.storage.local.set({leap_status: 'connected'});
     leap_status = 'connected';
 }
 
@@ -146,7 +169,7 @@ function MessagingHandler() {
     try {
         chrome.runtime.onMessage.addListener( function(request, sender, sendResponse) {
             console.log("onMessage data: " + JSON.stringify(request) + " " +
-                JSON.stringify(sender) + " " + JSON.stringify(sendResponse));
+                JSON.stringify(sender));
             // disconnect command from popup button
             if (request.popUpAction === 'disconnect') {
                 controller.disconnect();
@@ -170,7 +193,7 @@ function MessagingHandler() {
 var fpsCounter = -1;
 // run the leap loop, this will be running until disconnected
 controller.loop(function(frame) {
-    // console.log("start leap loop");
+
     if(action === 'none')
             UpdateStatusImage('connected');
 
@@ -181,41 +204,39 @@ controller.loop(function(frame) {
 
     // attempt to reduce the fps
     fpsCounter++;
-    if(fpsCounter % fpsScaleFactor === 0 && fpsCounter !== 0)
+    if(fpsCounter % appSettings.fpsScaleFactor === 0 && fpsCounter !== 0)
         fpsCounter = -1;
 
     // if current tab doesn't have focus, the leap is disconnected
     // or scale factor is not met exit loop
-    if (!tab_has_focus || fpsCounter % fpsScaleFactor !== 0) {
+    if (!tab_has_focus || fpsCounter % appSettings.fpsScaleFactor !== 0) {
         return;
     }
 
     // check frames to decide what gesture and action to do
     // this part includes also a setup of coordinates center at first run
-    //TODO: add the process to options page as well
     if (frame.valid && frame.pointables.length > 0) {
         var position = frame.pointables[0].stabilizedTipPosition;
         var normalized = frame.interactionBox.normalizePoint(position);
-        var temp = chrome.storage.sync.get('newCenter', function (items) {
-            return items.newCenter;
-        });
-        // console.log("newCenter value fetch from storage: " + temp);
-        // TODO: check value from storage also
-        if (runOnce === 0) {
-
-            NewCenterSetup();
-            runOnce++;
-        }
-        if (setupConfirm) {
-            newCenter = normalized;
-            chrome.storage.sync.set({newCenter: JSON.stringify(newCenter)});
-            chrome.storage.sync.set({setupDone: setupDone});
-            setupDone = true;
-            setupConfirm = false;
-        }
         // old and new center values for debug
         //  console.log("normal: " + normalized);
         //  console.log("new: " + NewInteractionBox(normalized));
+
+        //TODO: add the process to options page as well
+        // check if new center setup if not done, open the setup dialog
+        if (!appSettings.setupDone  && !setupModalOpen) {
+            NewCenterSetup();
+        }
+        // if the dialog returns OK, set the new center and save it
+        if (setupConfirm) {
+            appSettings.newCenter = JSON.stringify(normalized);
+            chrome.storage.local.set({newCenter: JSON.parse(appSettings.newCenter)});
+            chrome.storage.local.set({setupDone: appSettings.setupDone});
+            setupConfirm = false;
+            appSettings.newCenter = JSON.parse(appSettings.newCenter);
+        }
+
+
 
         // if setup dialog is open don't look for gestures
         if(setupModalOpen)
@@ -231,29 +252,44 @@ controller.loop(function(frame) {
         }
 
         // if there's 5 extended fingers go with scroll or history navigation gesture
-        if (extendedFingers === 5 && lastExtendedFingers === 5) {
+        var frameDiff = ({x: 0, y: 0});
+        if (extendedFingers >= 4) {
+            // scroll gesture
+            // TODO: fix a trigger to scroll
+            if (extendedFingers === 5) {
+                // console.log("action: " + action);
+                // if(curHistoryCount > appSettings.historyThreshold) {
+                curFramePos.x = NewInteractionBox(normalized)[0] * window.innerWidth;
+                curFramePos.y = (1 - NewInteractionBox(normalized)[1]) * window.innerHeight;
+                frameDiff.x = curFramePos.x - lastFramePos.x;
+                frameDiff.y = curFramePos.y - lastFramePos.y;
+                // console.log("counter " + curHistoryCount);
+                if(curHistoryCount > appSettings.historyThreshold) {
+                    if (Math.abs(frameDiff.y) > appSettings.scrollThresholdY ||
+                        Math.abs(frameDiff.x) > appSettings.scrollThresholdX) {
+                        action = 'scroll';
+                    }
+                }
+                curHistoryCount++;
+            }
             // history navigation gesture
             if(frame.valid && frame.gestures.length > 0) {
                 var gesture = frame.gestures[0];
                 if(gesture.type === 'swipe') {
+                    // console.log("inside swipe");
                     var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
-                    if(isHorizontal) {
-                        if (gesture.direction[0] > 0) {
+                    if(isHorizontal && curHistoryCount > 0 && lastAction !== 'move_history_left' &&
+                        lastAction !== 'move_history_right') {
+                        if (gesture.direction[0] > 0 ) {
                             action = 'move_history_right';
                         } else {
+                            // TODO: might be good to add some constraint to the side that
+                            // is in accordance with the hand type
                             action = 'move_history_left';
                         }
                     }
                 }
             }
-            // TODO: fix a trigger to scroll
-            // scroll gesture
-            // console.log("action: " + action);
-            //if(action === 'none') {
-                curFramePos.x = NewInteractionBox(normalized)[0] * window.innerWidth;
-                curFramePos.y = (1 - NewInteractionBox(normalized)[1]) * window.innerHeight;
-                action = 'scroll';
-            //}
         }
         // refresh gesture
         else if (extendedFingers == 1 && fingersList[1].extended && lastExtendedFingers === 1) {
@@ -262,7 +298,8 @@ controller.loop(function(frame) {
                     var pointableIds = gesture.pointableIds;
                     pointableIds.forEach( function (pointableId) {
                         var pointable = frame.pointable(pointableId);
-                        if(pointable == fingersList[1] && gesture.type === 'circle' && curRefreshCount > refreshThreshold) {
+                        if(pointable == fingersList[1] && gesture.type === 'circle' &&
+                            curRefreshCount > appSettings.refreshThreshold) {
                             action = 'refresh';
                         }
                         curRefreshCount++;
@@ -276,7 +313,7 @@ controller.loop(function(frame) {
                 var gesture = frame.gestures[0];
                 if(gesture.type === 'swipe') {
                     var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
-                    if(isHorizontal) {
+                    if(isHorizontal && lastAction !== 'move_tab_left' && lastAction !== 'move_tab_right') {
                         if (gesture.direction[0] > 0) {
                             action = 'move_tab_right';
                         } else {
@@ -291,16 +328,17 @@ controller.loop(function(frame) {
             console.log("zooming ohooo");
             console.log("thumb " + fingersList[0].pipPosition + "index " + fingersList[1].pipPosition);
         }
+        // else action to none
         else
             action = 'none';
 
         // apply actions
-        console.log("action " + action);
+        console.log("action: " + action);
         switch (action) {
             case 'scroll':
-                ScrollPage(curFramePos);
+                ScrollPage(frameDiff);
                 console.log("scroll image");
-                UpdateStatusImage('scroll');
+                curHistoryCount = 0;
                 break;
             case 'zoom':
                 if(scale >= 0)
@@ -308,41 +346,49 @@ controller.loop(function(frame) {
                 if(scale < 0)
                     UpdateStatusImage('zoomOut');
                 zoomPage(scale);
+                curHistoryCount = 0;
                 break;
             case 'refresh':
                 UpdateStatusImage('refresh');
-                setTimeout(RefreshPage, discreteActionDelay);
+                setTimeout(RefreshPage, appSettings.discreteActionDelay);
+                curHistoryCount = 0;
                 break;
             case 'move_history_right':
                 UpdateStatusImage('move_history_right');
-                setTimeout( function() { navigateHistory('right'); }, discreteActionDelay);
+                setTimeout( function() { navigateHistory('right'); }, appSettings.discreteActionDelay);
+                curHistoryCount = 0;
                 break;
             case 'move_history_left':
                 UpdateStatusImage('move_history_left');
-                setTimeout( function() { navigateHistory('left'); }, discreteActionDelay);
+                setTimeout( function() { navigateHistory('left'); }, appSettings.discreteActionDelay);
+                curHistoryCount = 0;
                 break;
             // for tab image update is done inside the navigateTabs method
             // since it checks there if the switching was successful or not from message from
             // background page
             case 'move_tab_right':
-                setTimeout( function() { navigateTabs('right'); }, discreteActionDelay);
+                setTimeout( function() { navigateTabs('right'); }, appSettings.discreteActionDelay);
+                curHistoryCount = 0;
                 break;
             case 'move_tab_left':
-                setTimeout( function() { navigateTabs('left'); }, discreteActionDelay);
+                setTimeout( function() { navigateTabs('left'); }, appSettings.discreteActionDelay);
+                curHistoryCount = 0;
                 break;
             case 'none':
-                //console.log(leap_status);
                 if(leap_status === 'connected')
                     UpdateStatusImage('connected');
                 else
                     UpdateStatusImage('disconnected');
+                // curHistoryCount = 0;
                 break;
         }
+        // save current frame value to be used for next frame
         lastFrame = frame;
         lastExtendedFingers = extendedFingers;
+        lastFramePos.y = curFramePos.y;
+        lastFramePos.x = curFramePos.x;
+        // action = 'none';
     }
-
-    // console.log("end leap loop");
 });
 
 // new center setup function
@@ -368,17 +414,24 @@ function NewCenterSetup() {
     document.getElementById('okModal').addEventListener('click', function (e) {
         console.log('Center changed successfully!');
         setupConfirm = true;
+        appSettings.setupDone = true;
         setupDialog.close();
         setupModalOpen = false;
     });
 }
 
 // new coordinates for new interactionBox
-function NewInteractionBox(curCenter) {
-    var temp = [0,0,0];
-    for (var i = 0; i < 3; i++)
-        temp[i] = curCenter[i] - newCenter[i];
-    return temp;
+function NewInteractionBox(currentPos) {
+    var newCoordinates = [0,0,0];
+    // convert stored newCenter json format to array
+    var newCenterArray = [];
+    for(var j in appSettings.newCenter)
+        newCenterArray.push(appSettings.newCenter[j]);
+    // calculate new coordinates
+    for (var i = 0; i < 3; i++) {
+        newCoordinates[i] = currentPos[i] - newCenterArray[i];
+    }
+    return newCoordinates;
 }
 
 // TODO: remove this test code below
@@ -424,44 +477,20 @@ function navigateTabs (direction) {
             }
         });
     }
-
-    // // get active tab id
-    // var activeTabIndex;
-    // chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    //     activeTabIndex = tabs[0];
-    // });
-    // chrome.tabs.query({currentWindow: true}, function(tabs) {
-    //     for(var i = 0; i < tabs.length; i++) {
-    //         if(tabs[i].id === activeTabIndex)
-    //             if(direction === 'right') {
-    //
-    //                 chrome.tabs.update(tabs[i + 1], {highlighted: true});
-    //             }
-    //             else if(direction === 'left') {
-    //             // TODO: rotate tabs
-    //                 console.log('Next tab');
-    //                 chrome.tabs.update(tabs[i - 1], {highlighted: true});
-    //         }
-    //
-    //     }
-    // });
 }
 
 // scroll function
-function ScrollPage(curFramePos) {
-    var diffX = curFramePos.x - lastFramePos.x;
-    var diffY = curFramePos.y - lastFramePos.y;
-
-    if(diffY > appSettings.scrollThreshold.y)
+function ScrollPage(frameDiff) {
+    if(frameDiff.y > appSettings.scrollThresholdY)
         scrollValue.y = scrollSpeed.y;
 
-    else if(diffY < - appSettings.scrollThreshold.y)
+    else if(frameDiff.y < - appSettings.scrollThresholdY)
         scrollValue.y = - scrollSpeed.y;
 
-    if(diffX > appSettings.scrollThreshold.x)
+    if(frameDiff.x > appSettings.scrollThresholdX)
         scrollValue.x = scrollSpeed.x;
 
-    else if(diffX < - appSettings.scrollThreshold.x)
+    else if(frameDiff.x < - appSettings.scrollThresholdX)
         scrollValue.x = - scrollSpeed.x;
 
     window.scrollBy(scrollValue.x, scrollValue.y);
@@ -474,24 +503,25 @@ function ScrollPage(curFramePos) {
     // window.scrollTo(scrollLevel.x, scrollAmount.y);
 */
     // reset scroll level for next frame
-    // TODO: add to settings page
     if(!appSettings.continuousScroll) {
         scrollValue.x = 0;
         scrollValue.y = 0;
     }
-    // save current frame position
-    lastFramePos.y = curFramePos.y;
-    lastFramePos.x = curFramePos.x;
+
+    // update image
+    UpdateStatusImage('scroll');
 }
 
 // get value of max scroll possible on the current page
-function getScrollMax(axis){
-    if (axis == "y")
-        return ( 'scrollMaxY' in window ) ? window.scrollMaxY :
-            (document.documentElement.scrollHeight - document.documentElement.clientHeight);
-    if (axis == "x")
-        return ( 'scrollMaxX' in window ) ? window.scrollMaxX :
-            (document.documentElement.scrollWidth - document.documentElement.clientWidth);
+function getScrollMax(axis) {
+    var body = document.body,
+        html = document.documentElement;
+    if (axis === 'y')
+        return Math.max( body.scrollHeight, body.offsetHeight,
+            html.clientHeight, html.scrollHeight, html.offsetHeight );
+    if (axis === 'x')
+        return Math.max( body.scrollWidth, body.offsetWidth,
+            html.clientWidth, html.scrollWidth, html.offsetWidth );
 }
 
 // Zoom function
@@ -513,13 +543,12 @@ function RefreshPage() {
 function UpdateStatusImage(action) {
     // check which image to use according to current action
     if(action === 'scroll') {
-        // console.log("scroll icon shown");
         imgURL = scrollImage;
         window.clearTimeout( isScrolling );
         isScrolling = setTimeout(function() {
             // fade out image when action stops
             FadeStatusImg(false);
-        },  fpsScaleFactor * 20);
+        },  appSettings.fpsScaleFactor * 20);
     }
     else if (action === 'refresh')
         imgURL = refreshImage
@@ -540,7 +569,7 @@ function UpdateStatusImage(action) {
         isZooming = setTimeout(function() {
             // fade out image when action stops
             FadeStatusImg(false);
-        },  fpsScaleFactor * 20);
+        },  appSettings.fpsScaleFactor * 20);
     }
     else if(action === 'connected')
         imgURL = connectedImage;
@@ -563,11 +592,32 @@ function StatusMessage(message, color) {
 }
 
 // get saved settings to use on runtime
-function GetSettings() {
-    chrome.storage.sync.get(['extensionOn', 'startOn', 'errorPos', 'scrollOn',
+function GetSettings(appSettings) {
+    chrome.storage.local.get(['setupDone', 'extensionOn', 'startOn', 'errorPos', 'scrollOn',
         'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'continuousScroll',
-        'scrollThreshold', 'scrollStep', 'connectionTimeOut'], function (items) {
-        appSettings = items;
+        'scrollThresholdX', 'scrollThresholdY', 'scrollStepX', 'scrollStepY', 'connectionTimeOut', 'fpsScaleFactor',
+        'discreteActionDelay', 'refreshThreshold', 'historyThreshold', 'firstSettings'], function (items) {
+        appSettings.setupDone = items.setupDone;
+        appSettings.extensionOn = items.extensionOn;
+        appSettings.startOn = items.startOn;
+        appSettings.errorPos = items.errorPos;
+        appSettings.scrollOn = items.scrollOn;
+        appSettings.historyOn = items.historyOn;
+        appSettings.tabOn = items.tabOn;
+        appSettings.refreshOn = items.refreshOn;
+        appSettings.zoomOn = items.zoomOn;
+        appSettings.scrollSpeed = items.scrollSpeed;
+        appSettings.continuousScroll = items.continuousScroll;
+        appSettings.scrollThresholdX = items.scrollThresholdX;
+        appSettings.scrollThresholdY = items.scrollThresholdY;
+        appSettings.scrollStepX = items.scrollStepX;
+        appSettings.scrollStepY = items.scrollStepY;
+        appSettings.connectionTimeOut = items.connectionTimeOut;
+        appSettings.fpsScaleFactor = items.fpsScaleFactor;
+        appSettings.discreteActionDelay = items.discreteActionDelay;
+        appSettings.refreshThreshold = items.refreshThreshold;
+        appSettings.historyThreshold = items.historyThreshold;
+        appSettings.firstSettings = items.firstSettings;
     });
 }
 
@@ -619,12 +669,12 @@ controller.on('ready', function() {
 controller.on('connect', function() {
     console.log("connected with protocol v" + controller.connection.opts.requestProtocolVersion);
     leap_status = 'connected';
-    chrome.storage.sync.set({leap_status: 'connected'});
+    chrome.storage.local.set({leap_status: 'connected'});
 });
 controller.on('disconnect', function() {
     console.log("disconnect");
     leap_status = 'disconnected';
-    chrome.storage.sync.set({leap_status: 'disconnected'});
+    chrome.storage.local.set({leap_status: 'disconnected'});
 });
 
 // TODO: hide those events when device not streaming
