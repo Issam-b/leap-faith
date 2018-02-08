@@ -29,6 +29,7 @@ var newCenter = [0, 0, 0];
 var setupDone = false;
 var fpsScaleFactor = 10;
 var discreteActionDelay = 500;
+var refreshThreshold = 1, curRefreshCount = 0;
 
 // other variables
 var tab_has_focus;
@@ -255,15 +256,16 @@ controller.loop(function(frame) {
             //}
         }
         // refresh gesture
-        else if (extendedFingers == 1 && lastExtendedFingers === 1) {
+        else if (extendedFingers == 1 && fingersList[1].extended && lastExtendedFingers === 1) {
             if(frame.valid && frame.gestures.length > 0) {
                 frame.gestures.forEach( function (gesture) {
                     var pointableIds = gesture.pointableIds;
                     pointableIds.forEach( function (pointableId) {
                         var pointable = frame.pointable(pointableId);
-                        if(pointable == fingersList[1] && fingersList[1].extended && gesture.type === 'circle') {
+                        if(pointable == fingersList[1] && gesture.type === 'circle' && curRefreshCount > refreshThreshold) {
                             action = 'refresh';
                         }
+                        curRefreshCount++;
                     });
                 });
             }
@@ -317,20 +319,19 @@ controller.loop(function(frame) {
                 break;
             case 'move_history_left':
                 UpdateStatusImage('move_history_left');
-                navigateHistory('left');
                 setTimeout( function() { navigateHistory('left'); }, discreteActionDelay);
                 break;
+            // for tab image update is done inside the navigateTabs method
+            // since it checks there if the switching was successful or not from message from
+            // background page
             case 'move_tab_right':
-                UpdateStatusImage('move_tab_right');
                 setTimeout( function() { navigateTabs('right'); }, discreteActionDelay);
                 break;
             case 'move_tab_left':
-                UpdateStatusImage('move_tab_left');
-                navigateHistory('left');
                 setTimeout( function() { navigateTabs('left'); }, discreteActionDelay);
                 break;
             case 'none':
-                console.log(leap_status);
+                //console.log(leap_status);
                 if(leap_status === 'connected')
                     UpdateStatusImage('connected');
                 else
@@ -403,20 +404,47 @@ function navigateHistory (direction) {
 }
 
 // navigate tabs function
-//TODO: not finished yet
 function navigateTabs (direction) {
-    // get list of tabs
-    // chrome.tabs.query({}, function(tabs) {
-    //
-    // });
+    // sends a message to the background page to handle getting tab index
+    // and find the next or previous tab index and switch to it
+    // response returned is whether tab switched and what index
     if(direction === 'right') {
-        console.log('Next tab');
-        history.forward();
+        chrome.runtime.sendMessage({tab_direction: 'right'}, function (response) {
+            if (response.tabSwitched === 'switched') {
+                UpdateStatusImage('move_tab_right');
+                console.log('Next tab');
+            }
+        });
     }
-    else if(direction === 'left'){
-        console.log('Previous tab');
-        history.back();
+    else if(direction === 'left') {
+        chrome.runtime.sendMessage({tab_direction: 'left'}, function (response) {
+            if (response.tabSwitched === 'switched') {
+                UpdateStatusImage('move_tab_left');
+                console.log('Previous tab');
+            }
+        });
     }
+
+    // // get active tab id
+    // var activeTabIndex;
+    // chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    //     activeTabIndex = tabs[0];
+    // });
+    // chrome.tabs.query({currentWindow: true}, function(tabs) {
+    //     for(var i = 0; i < tabs.length; i++) {
+    //         if(tabs[i].id === activeTabIndex)
+    //             if(direction === 'right') {
+    //
+    //                 chrome.tabs.update(tabs[i + 1], {highlighted: true});
+    //             }
+    //             else if(direction === 'left') {
+    //             // TODO: rotate tabs
+    //                 console.log('Next tab');
+    //                 chrome.tabs.update(tabs[i - 1], {highlighted: true});
+    //         }
+    //
+    //     }
+    // });
 }
 
 // scroll function
