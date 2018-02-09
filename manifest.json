@@ -2,7 +2,7 @@
 "manifest_version": 2,
 "name": "Leap of Fatih",
 "version": "0.1",
-"author": "Assam B",
+"author": "Assam Boudjelthia",
 "description": "Leap of Faith extension to control web browser with Leap Motion device.",
 "minimum_chrome_version": "19.0.1055.1",
 "options_page": "options.html",
@@ -28,10 +28,13 @@
 	}
 ],
 "browser_action":{
-	"default_icon": "icon.png",
+	"default_icon": "images/icons/icon32.png",
 	"default_title": "Leap Motion Controller",
 	"default_popup": "popup.html"
 },
+"icons": { "16": "images/icons/icon16.png",
+		"48": "images/icons/icon48.png",
+		"128": "images/icons/icon128.png"},
 "web_accessible_resources": [
 	"images/*"
 ],
