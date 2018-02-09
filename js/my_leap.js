@@ -1,27 +1,43 @@
+/**
+ * @file Leap motion chrome extension content script for gestures handling.
+ * @author Assam Boudjelthia <assam.bj@gmail.com>
+ * @version 0.1
+ */
+
 //TODO: settings saving first run in here
+//TODO: gesture to reset zoom to normal
+//TODO: if the extension crashes reload page!
+//TODO: make a timeout of usage so if the user didn't interact with the device it disconnects
+//TODO: reduce scroll step if page scrollMax is too big
 
 // Extension settings variable declaration
 var appSettings = ({});
 
+
+//TODO: to add to settings
+var zoomScale = 0.1;
+
 // Variable declarations
 var attached, streaming;
 var leap_status;
-var curRefreshCount = 0;
+var curRefreshCount = 0, curZoomCount = 0;
 var curHistoryCount = 0;
 var scrollSpeed;
 var messageCounter = 0;
 
+
 var tab_has_focus;
-var lastFramePos = ({x: 0, y: 0});
+var lastFramePos = ({x: 0, y: 0, z: 0});
 var lastFrame, lastExtendedFingers = 0;
-var curFramePos = ({x: 0, y: 0});
+var frameDiff = ({x: 0, y: 0, z: 0});
+var curFramePos = ({x: 0, y: 0, z: 0});
 var scrollValue = ({x: 0, y: 0});
 
 var isScrolling, isZooming;
 var action = 'none', lastAction = 'none';
 var connection, messageInterval;
 var lastCheckTime = new Date().getTime() / 1000;
-var TimeLost;
+var currentTime = 0;
 var ConnectionLost = false;
 var setupConfirm = false;
 var setupModalOpen = false;
@@ -118,36 +134,9 @@ AddDOMElement();
 // popup message handler to connect/disconnect
 MessagingHandler();
 
-// Check if Current Tab has Focus, and only run this extension on the active tab
-//setInterval(check_focus, 1000);
-function check_focus() {
-    try {
-        chrome.runtime.sendMessage({ tab_status: 'current' }, function(response) {
-            if(response.active && window.location.href == response.url && document.hasFocus()) {
-                tab_has_focus = true;
-            }
-            else {
-                tab_has_focus = false;
-            }
-        });
-    }
-    catch(error) {
-        // If you clicked to reload this extension, you will get this error, which a refresh fixes
-        if(error.message.indexOf('Error connecting to extension') !== -1) {
-            document.location.reload(true);
-        }
-        // Something else went wrong
-        else {
-            console.error(error.message);
-        }
-    }
-}
-
 // TODO: send message to background
-//TODO: add confition when the leap crashes, restart it or reload browser
+//TODO: add condition when the leap crashes, restart it or reload browser
 // check connection of leap device
-var currentTime = 0;
-var conChecks = 0;
 connection = setInterval(CheckConnection, 1000);
 function CheckConnection() {
     if(tab_has_focus)
@@ -155,12 +144,12 @@ function CheckConnection() {
    // console.log(currentTime + " * " + lastCheckTime);
     if(currentTime - lastCheckTime > appSettings.connectionTimeOut) {
         //clearInterval(connection);
-        if(conChecks % 12 === 0) {
+        if(messageCounter % 12 === 0) {
             console.log("Connection lost!");
             messageInterval = setInterval(StatusMessage("Connection to device have been lost!", 'error'), 5000);
-            conChecks = 0;
+            messageCounter = 0;
         }
-        conChecks++;
+        messageCounter++;
         ConnectionLost = true;
         leap_status = 'Port disconnected';
         chrome.storage.local.set({leap_status: leap_status});
@@ -186,7 +175,12 @@ function MessagingHandler() {
                 controller.connect();
                 sendResponse({leap_status: leap_status});
             }
-
+            // reset zoom to normal only for status image
+            // if(request.DOMResize === true) {
+            //     $("#status-placeholder").zoom = 1.0;
+            //     console.log("DOM zoom recovered");
+            //     sendResponse({recoveredZoom: true});
+            // }
             return true;
         });
     } catch(error) {
@@ -200,7 +194,7 @@ function MessagingHandler() {
 controller.loop(function(frame) {
 
     // update icon status
-    if(action === 'none' && leap_status == 'Port connected')
+    if(action === 'none' && leap_status === 'Port connected')
         UpdateStatusImage('connected');
 
     // if device is not attached exit
@@ -212,7 +206,7 @@ controller.loop(function(frame) {
     chrome.storage.local.set({leap_status: leap_status});
     attached = true;
     streaming = true;
-    conChecks = 0;
+    messageCounter = 0;
     clearInterval(messageInterval);
     //connection = setInterval(CheckConnection, 1000);
 
@@ -222,7 +216,7 @@ controller.loop(function(frame) {
         fpsCounter = -1;
 
     // if current tab doesn't have focus, the leap is disconnected
-    // or scale factor is not met exit loop
+    // or zoomFactor factor is not met exit loop
     if (!tab_has_focus || fpsCounter % appSettings.fpsScaleFactor !== 0) {
         return;
     }
@@ -268,18 +262,22 @@ controller.loop(function(frame) {
                 extendedFingers++;
         }
 
-        // if there's 5 extended fingers go with scroll or history navigation gesture
-        var frameDiff = ({x: 0, y: 0});
+        // calculate new coordinates
+        curFramePos.x = NewInteractionBox(normalized)[0] * window.innerWidth;
+        curFramePos.y = (1 - NewInteractionBox(normalized)[1]) * window.innerHeight;
+        curFramePos.z = NewInteractionBox(normalized)[2] * 100;
+        frameDiff.x = curFramePos.x - lastFramePos.x;
+        frameDiff.y = curFramePos.y - lastFramePos.y;
+        frameDiff.z = curFramePos.z - lastFramePos.z;
+
+        var zoomFactor = 0;
         if (extendedFingers >= 4) {
             // scroll gesture
             // TODO: fix a trigger to scroll
             if (extendedFingers === 5) {
+                // if there's 5 extended fingers go with scroll or history navigation gesture
                 // console.log("action: " + action);
                 // if(curHistoryCount > appSettings.historyThreshold) {
-                curFramePos.x = NewInteractionBox(normalized)[0] * window.innerWidth;
-                curFramePos.y = (1 - NewInteractionBox(normalized)[1]) * window.innerHeight;
-                frameDiff.x = curFramePos.x - lastFramePos.x;
-                frameDiff.y = curFramePos.y - lastFramePos.y;
                 // console.log("counter " + curHistoryCount);
                 if(curHistoryCount > appSettings.historyThreshold) {
                     if (Math.abs(frameDiff.y) > appSettings.scrollThresholdY ||
@@ -315,7 +313,7 @@ controller.loop(function(frame) {
                     var pointableIds = gesture.pointableIds;
                     pointableIds.forEach( function (pointableId) {
                         var pointable = frame.pointable(pointableId);
-                        if(pointable == fingersList[1] && gesture.type === 'circle' &&
+                        if(pointable === fingersList[1] && gesture.type === 'circle' &&
                             curRefreshCount > appSettings.refreshThreshold) {
                             action = 'refresh';
                         }
@@ -325,7 +323,7 @@ controller.loop(function(frame) {
             }
         }
         // tab move gesture
-        else if (extendedFingers == 3 && lastExtendedFingers === 3) {
+        else if (extendedFingers === 2 && lastExtendedFingers === 2) {
             if(frame.valid && frame.gestures.length > 0) {
                 var gesture = frame.gestures[0];
                 if(gesture.type === 'swipe') {
@@ -340,28 +338,42 @@ controller.loop(function(frame) {
                 }
             }
         }
-        // zoom gesture if thumb and index fingers are extended
-        else if(extendedFingers === 2 && lastExtendedFingers === 2 && fingersList[0].extended && fingersList[1].extended) {
-            console.log("zooming ohooo");
-            console.log("thumb " + fingersList[0].pipPosition + "index " + fingersList[1].pipPosition);
+        // zoom gesture if thumb extended and unextend thumb to stop it
+        // zoom factor is 10%
+        else if(extendedFingers === 1 && lastExtendedFingers === 1 && fingersList[0].extended &&
+            lastAction !== 'zoom' && Math.abs(frameDiff.z) > appSettings.scrollThresholdY) {
+                    var thumbPos = fingersList[0].dipPosition;
+                    var IndexPos = fingersList[1].dipPosition;
+                    var distance = Math.sqrt(Math.pow(thumbPos[0]-IndexPos[0], 2) +
+                        Math.pow(thumbPos[1]-IndexPos[1], 2) +
+                        Math.pow(thumbPos[2]-IndexPos[2], 2));
+                    if(distance > 40) {
+                        if (frameDiff.z < appSettings.scrollThresholdY)
+                            zoomFactor = zoomScale;
+                        else
+                            zoomFactor = -zoomScale;
+                        action = 'zoom';
+                    }
+
         }
         // else action to none
-        else
+        else {
             action = 'none';
-
+        }
         // apply actions
         console.log("action: " + action);
+        console.log("zoom Count: " + curZoomCount);
         switch (action) {
             case 'scroll':
                 ScrollPage(frameDiff);
                 curHistoryCount = 0;
                 break;
             case 'zoom':
-                if(scale >= 0)
+                zoomPage(zoomFactor);
+                if(zoomFactor >= 0)
                     UpdateStatusImage('zoomIn');
-                if(scale < 0)
+                if(zoomFactor < 0)
                     UpdateStatusImage('zoomOut');
-                zoomPage(scale);
                 curHistoryCount = 0;
                 break;
             case 'refresh':
@@ -408,6 +420,8 @@ controller.loop(function(frame) {
         lastExtendedFingers = extendedFingers;
         lastFramePos.y = curFramePos.y;
         lastFramePos.x = curFramePos.x;
+        lastFramePos.z = curFramePos.z;
+
         // action = 'none';
     }
 });
@@ -454,16 +468,6 @@ function NewInteractionBox(currentPos) {
     }
     return newCoordinates;
 }
-
-// TODO: remove this test code below
-window.onkeypress = function(e) {
-    console.log("attempt zoom 1");
-    // if (e.charCode == 65) { // Space bar
-    //     console.log("attempt zoom 1");
-    var frame = 1;
-        zoomPage(frame);
-    // }
-};
 
 // navigate the history back and forward
 function navigateHistory (direction) {
@@ -544,11 +548,14 @@ function getScrollMax(axis) {
 }
 
 // Zoom function
-function zoomPage(scale) {
-    $('html').css({
-        'zoom': scale,
-        '-moz-transform': 'scale(' + scale + ')',
-        '-webkit-transform': 'scale(' + scale + ')'
+function zoomPage(zoomFactor) {
+    chrome.runtime.sendMessage({zoomFactor: zoomFactor}, function (response) {
+        // if (response.zoomDone === true) {  // this condition doesn't make sense but let's just do
+            if(zoomFactor > 0)
+                console.log('Zoom In');
+            else
+                console.log('Zoom Out');
+        // }
     });
 }
 
@@ -603,10 +610,10 @@ function UpdateStatusImage(action) {
 // Show a message notification of status
 function StatusMessage(message, color) {
     if (color === 'error')
-        $("#leap-notification").css({'background-color': '#ff6519'});
+        $("#leap-notification").css({'background-color': '#ff0000'});
     else if (color === 'info')
         $("#leap-notification").css({'background-color': '#3aff31'});
-    $("#leap-notification p").fadeIn("slow").text(message);
+    $("#leap-notification").fadeIn("slow").text(message);
     $("#leap-notification").fadeTo(3000, 500).fadeOut("slow");
 }
 
@@ -623,7 +630,7 @@ function AddDOMElement() {
     // DOM for status image
     console.log("Add status image DOM");
     $('body').append('<div id="status-placeholder" style="display: none;">' +
-        '<img id="status-image" src="" alt="scrolling" width="128" height="128"/></div>');
+        '<img id="status-image" src="" alt="scrolling" width="72" height="72"/></div>');
 
     // DOM for Connection status on top of page
     console.log("Add status top message DOM");
@@ -633,7 +640,7 @@ function AddDOMElement() {
             StatusAppendPos = 'header';
         else
             StatusAppendPos = 'body';
-        $(StatusAppendPos).append('<div id="leap-notification" style="display: none"><p></p></div>');
+        $(StatusAppendPos).append('<div id="leap-notification" style="display: none"></div>');
     }
 }
 
@@ -651,7 +658,6 @@ function ShowDOMs(state) {
 }
 
 // leap events
-// TODO: hide those events when device not streaming
 controller.on('focus', function() {
     tab_has_focus = true;
     console.log("focus");

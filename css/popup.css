@@ -1,14 +1,14 @@
 body {
-	background: #a1a6ac;
-	width: 200px
+	background: #c6cbd1;
+	width: 200px;
+    text-align: center;
+    font-weight: bold;
 }
 section {
 	margin: 15px auto 0;
-	margin-bottom: 15px;
 	width: 75px;
 	height: 150px;
 	position: relative;
-	text-align: center;
 }
 :active, :focus {
 	outline: 0;
@@ -42,7 +42,6 @@ t {
 	border: 0;
 	color: rgb(37,37,37);
 	border-radius: 35px;
-	text-align: center;
 	line-height: 79px;
 	background-color: rgb(83,87,93);
 
@@ -115,9 +114,15 @@ t.on + span {
 	background-color: rgb(135,187,83);
 }
 
+i {
+    font-size: 60px;
+    color: rgb(46, 51, 53);
+    text-shadow: 2px 2px 4px #000000;
+}
+
 a:link {
-    color: rgb(255, 255, 255); 
-    background-color: transparent; 
+    color: rgb(255, 255, 255);
+    background-color: transparent;
     text-decoration: none;
 }
 

@@ -1,17 +1,15 @@
+/**
+ * @file Leap motion chrome extension background page. It has a messaging listener
+ * to handle switching tabs and zooming.
+ * @author Assam Boudjelthia <assam.bj@gmail.com>
+ * @version 0.1
+ */
+
 var tabSwitched, activeTabIndex, switchedTabIndex;
 var tabsCount;
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse)
 	{
-		// // check whether the tab sending message is current focused tab or not
-		// if (request.tab_status === 'current')
-		// {
-		// 	sendResponse({
-		// 		active: sender.tab.active,
-		// 		title: sender.tab.title,
-		// 		url: sender.tab.url
-		// 	});
-		// }
 		if(request.tab_direction) {
 			// get active tab id
 			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -41,5 +39,24 @@ chrome.runtime.onMessage.addListener(
 			});
 			sendResponse({ tabSwitched: tabSwitched });
 		}
+		// zoom page
+		else if(request.zoomFactor) {
+			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.getZoom(tabs[0].id, function (zoomLevel) {
+                    chrome.tabs.setZoom(tabs[0].id, zoomLevel + request.zoomFactor, function () {});
+                });
+
+			});
+			sendResponse({zoomDone: true});
+        }
 	}
 );
+
+// capture zoom changes and send to content page to reset status image zoom
+// chrome.tabs.onZoomChange.addListener(function (){
+//     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+//         chrome.tabs.sendMessage(tabs[0].id, {DOMResize: true}, function (response) {
+//             console.log("response: " + response.recoveredZoom);
+//         });
+//     });
+// });
