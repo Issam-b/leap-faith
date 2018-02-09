@@ -7,7 +7,7 @@ function save_options() {
     else if (document.getElementById('NotificationsBottom').checked)
         notificationPos = true;
 
-    chrome.storage.sync.set({
+    chrome.storage.local.set({
         extensionOn : document.getElementById('Enable_extension').checked,
         startOn: document.getElementById('Enable_on_startup').checked,
         NotificationPos: notificationPos,
@@ -17,10 +17,8 @@ function save_options() {
         refreshOn: document.getElementById('Refresh').checked,
         zoomOn: document.getElementById('Zoom').checked,
         scrollSpeed: document.getElementById('ScrollSpeed').value,
-        scrollStep: {
-            x: 5,
-            y: 5
-        }
+        scrollStepX: 5,
+        scrollStepX: 5
     }, function() {
         // Update status to let user know options were saved.
         var status = document.getElementById('status');
@@ -34,7 +32,7 @@ function save_options() {
 // Restores select box and checkbox state using the preferences
 // stored in chrome.storage.
 function restore_options() {
-    chrome.storage.sync.get([
+    chrome.storage.local.get([
         "extensionOn","startOn", "NotificationPos", "scrollOn", "historyOn",
         "tabOn", "refreshOn", "zoomOn", "scrollSpeed", "scrollStep"], function(items) {
         document.getElementById('Enable_extension').checked = items.extensionOn;
@@ -82,8 +80,8 @@ window.onload = function() {
     scrollValue.innerHTML = ScrollSpeedSlider.value;
     ScrollSpeedSlider.oninput = function() {
         scrollValue.innerHTML = this.value;
-    }
+    };
 
     document.getElementById('restore').addEventListener('click', defaults);
     document.getElementById('save').addEventListener('click', save_options);
-}
+};

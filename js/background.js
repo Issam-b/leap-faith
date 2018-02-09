@@ -3,15 +3,15 @@ var tabsCount;
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse)
 	{
-		// check whether the tab sending message is current focused tab or not
-		if (request.tab_status === 'current')
-		{
-			sendResponse({
-				active: sender.tab.active,
-				title: sender.tab.title,
-				url: sender.tab.url
-			});
-		}
+		// // check whether the tab sending message is current focused tab or not
+		// if (request.tab_status === 'current')
+		// {
+		// 	sendResponse({
+		// 		active: sender.tab.active,
+		// 		title: sender.tab.title,
+		// 		url: sender.tab.url
+		// 	});
+		// }
 		if(request.tab_direction) {
 			// get active tab id
 			chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -25,7 +25,7 @@ chrome.runtime.onMessage.addListener(
 					// get tab with next index
 					chrome.tabs.query({index: (activeTabIndex + 1) % tabsCount}, function(tabs) {
 						// highlight tab and focus on it
-						chrome.tabs.update(tabs[0].id, { highlighted: true, active: true });
+                        chrome.tabs.update(tabs[0].id, { highlighted: true, active: true });
 						tabSwitched = 'switched';
 					});
 				}
@@ -34,7 +34,7 @@ chrome.runtime.onMessage.addListener(
                     // get tab with previous index
 					chrome.tabs.query({index: (activeTabIndex - 1) % tabsCount}, function(tabs) {
                         // highlight tab and focus on it
-						chrome.tabs.update(tabs[0].id, { highlighted: true, active: true });
+                        chrome.tabs.update(tabs[0].id, { highlighted: true, active: true });
 						tabSwitched = 'switched';
 					});
 				}

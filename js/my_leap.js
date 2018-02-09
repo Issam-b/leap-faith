@@ -1,7 +1,51 @@
 //TODO: settings saving first run in here
+
 // Extension settings variable declaration
 var appSettings = ({});
+
+// Variable declarations
+var attached, streaming;
+var leap_status;
+var curRefreshCount = 0;
+var curHistoryCount = 0;
 var scrollSpeed;
+var messageCounter = 0;
+
+var tab_has_focus;
+var lastFramePos = ({x: 0, y: 0});
+var lastFrame, lastExtendedFingers = 0;
+var curFramePos = ({x: 0, y: 0});
+var scrollValue = ({x: 0, y: 0});
+
+var isScrolling, isZooming;
+var action = 'none', lastAction = 'none';
+var connection, messageInterval;
+var lastCheckTime = new Date().getTime() / 1000;
+var TimeLost;
+var ConnectionLost = false;
+var setupConfirm = false;
+var setupModalOpen = false;
+var fpsCounter = -1;
+
+// image locations
+var imgURL;
+var scrollImage = chrome.extension.getURL("images/scroll.png");
+var zoomInImage = chrome.extension.getURL("images/zoomIn.png");
+var zoomOutImage = chrome.extension.getURL("images/zoomOut.png");
+var refreshImage = chrome.extension.getURL("images/refresh.png");
+var historyRightImage = chrome.extension.getURL("images/history_right.png");
+var historyLeftImage = chrome.extension.getURL("images/history_left.png");
+var tabRightImage = chrome.extension.getURL("images/tab_right.png");
+var tabLeftImage = chrome.extension.getURL("images/tab_left.png");
+var connectedImage = chrome.extension.getURL("images/connected.png");
+var disconnectedImage = chrome.extension.getURL("images/disconnected.png");
+
+// create the leap controller instance with parameters
+var controller = new Leap.Controller( {
+    enableGestures: true
+});
+
+// update settings
 chrome.storage.local.get(['setupDone', 'extensionOn', 'startOn', 'errorPos', 'scrollOn',
     'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'continuousScroll',
     'scrollThresholdX', 'scrollThresholdY', 'scrollStepX', 'scrollStepY', 'connectionTimeOut', 'fpsScaleFactor',
@@ -27,7 +71,7 @@ chrome.storage.local.get(['setupDone', 'extensionOn', 'startOn', 'errorPos', 'sc
                 scrollStepX: 15,
                 scrollStepY: 10,
                 connectionTimeOut: 5,
-                fpsScaleFactor: 10,
+                fpsScaleFactor: 20,
                 discreteActionDelay: 500,
                 refreshThreshold: 2,
                 historyThreshold: 1,
@@ -68,48 +112,6 @@ chrome.storage.local.get(['setupDone', 'extensionOn', 'startOn', 'errorPos', 'sc
     }
 });
 
-
-
-// Variable declarations
-// chrome storage variables
-var leap_status;
-var curRefreshCount = 0;
-var curHistoryCount = 0;
-
-// other variables
-var tab_has_focus;
-var lastFramePos = ({x: 0, y: 0});
-var lastFrame, lastExtendedFingers = 0;
-var curFramePos = ({x: 0, y: 0});
-var scrollValue = ({x: 0, y: 0});
-
-var isScrolling, isZooming;
-var action = 'none', lastAction = 'none';
-var connection, messageInterval;
-var lastCheckTime = new Date().getTime() / 1000;
-var TimeLost;
-var ConnectionLost = false;
-var setupConfirm = false;
-var setupModalOpen = false;
-
-// image locations
-var imgURL;
-var scrollImage = chrome.extension.getURL("images/scroll.png");
-var zoomInImage = chrome.extension.getURL("images/zoomIn.png");
-var zoomOutImage = chrome.extension.getURL("images/zoomOut.png");
-var refreshImage = chrome.extension.getURL("images/refresh.png");
-var historyRightImage = chrome.extension.getURL("images/history_right.png");
-var historyLeftImage = chrome.extension.getURL("images/history_left.png");
-var tabRightImage = chrome.extension.getURL("images/tab_right.png");
-var tabLeftImage = chrome.extension.getURL("images/tab_left.png");
-var connectedImage = chrome.extension.getURL("images/connected.png");
-var disconnectedImage = chrome.extension.getURL("images/disconnected.png");
-
-// create the leap controller instance with parameters
-var controller = new Leap.Controller( {
-    enableGestures: true
-});
-
 // add DOM element
 AddDOMElement();
 
@@ -117,7 +119,7 @@ AddDOMElement();
 MessagingHandler();
 
 // Check if Current Tab has Focus, and only run this extension on the active tab
-setInterval(check_focus, 1000);
+//setInterval(check_focus, 1000);
 function check_focus() {
     try {
         chrome.runtime.sendMessage({ tab_status: 'current' }, function(response) {
@@ -142,27 +144,29 @@ function check_focus() {
 }
 
 // TODO: send message to background
+//TODO: add confition when the leap crashes, restart it or reload browser
 // check connection of leap device
+var currentTime = 0;
+var conChecks = 0;
 connection = setInterval(CheckConnection, 1000);
 function CheckConnection() {
-    var currentTime = new Date().getTime() / 1000;
-    if(currentTime - lastCheckTime > appSettings.connectionTimeOut && !ConnectionLost) {
-        clearInterval(connection);
-        console.log("Connection lost!");
-        messageInterval = setInterval(StatusMessage("Connection to device have been lost!", 'error'), 5000);
+    if(tab_has_focus)
+        currentTime = new Date().getTime() / 1000;
+   // console.log(currentTime + " * " + lastCheckTime);
+    if(currentTime - lastCheckTime > appSettings.connectionTimeOut) {
+        //clearInterval(connection);
+        if(conChecks % 12 === 0) {
+            console.log("Connection lost!");
+            messageInterval = setInterval(StatusMessage("Connection to device have been lost!", 'error'), 5000);
+            conChecks = 0;
+        }
+        conChecks++;
         ConnectionLost = true;
-        leap_status = 'disconnected';
-        // TODO: fix this tomorrow !!!!
-        //chrome.storage.local.set({leap_status: 'disconnected'});
+        leap_status = 'Port disconnected';
+        chrome.storage.local.set({leap_status: leap_status});
         UpdateStatusImage('disconnected');
-        //TODO: add confition when the leap crashes, restart it or reload browser
-        //TODO: use timeLost to implement a second notification after another period of time
-        TimeLost = currentTime;
     }
-    //chrome.storage.local.set({leap_status: 'connected'});
-    leap_status = 'connected';
 }
-
 
 // popup button connect/disconnect handler
 function MessagingHandler() {
@@ -173,6 +177,8 @@ function MessagingHandler() {
             // disconnect command from popup button
             if (request.popUpAction === 'disconnect') {
                 controller.disconnect();
+                if(leap_status === 'Port disconnected');
+                FadeStatusImg(false);
                 sendResponse({leap_status: leap_status});
             }
             // connect command from popup button
@@ -190,17 +196,25 @@ function MessagingHandler() {
 
 }
 
-var fpsCounter = -1;
 // run the leap loop, this will be running until disconnected
 controller.loop(function(frame) {
 
-    if(action === 'none')
-            UpdateStatusImage('connected');
+    // update icon status
+    if(action === 'none' && leap_status == 'Port connected')
+        UpdateStatusImage('connected');
 
-    // save current time of successful frame data fetch from device
-    lastCheckTime = new Date().getTime() / 1000;
+    // if device is not attached exit
+    if(!attached)
+        return;
+
     ConnectionLost = false;
+    leap_status = 'Port connected';
+    chrome.storage.local.set({leap_status: leap_status});
+    attached = true;
+    streaming = true;
+    conChecks = 0;
     clearInterval(messageInterval);
+    //connection = setInterval(CheckConnection, 1000);
 
     // attempt to reduce the fps
     fpsCounter++;
@@ -212,6 +226,9 @@ controller.loop(function(frame) {
     if (!tab_has_focus || fpsCounter % appSettings.fpsScaleFactor !== 0) {
         return;
     }
+
+    // save current time of successful frame data fetch from device
+    lastCheckTime = new Date().getTime() / 1000;
 
     // check frames to decide what gesture and action to do
     // this part includes also a setup of coordinates center at first run
@@ -337,7 +354,6 @@ controller.loop(function(frame) {
         switch (action) {
             case 'scroll':
                 ScrollPage(frameDiff);
-                console.log("scroll image");
                 curHistoryCount = 0;
                 break;
             case 'zoom':
@@ -367,15 +383,20 @@ controller.loop(function(frame) {
             // since it checks there if the switching was successful or not from message from
             // background page
             case 'move_tab_right':
+                UpdateStatusImage('move_tab_right');
                 setTimeout( function() { navigateTabs('right'); }, appSettings.discreteActionDelay);
                 curHistoryCount = 0;
                 break;
             case 'move_tab_left':
+                UpdateStatusImage('move_tab_left');
                 setTimeout( function() { navigateTabs('left'); }, appSettings.discreteActionDelay);
                 curHistoryCount = 0;
                 break;
             case 'none':
-                if(leap_status === 'connected')
+                // stop any ongoing fadeOut animation
+                $("#status-placeholder").stop(true, true);
+                FadeStatusImg(true);
+                if(leap_status === 'Port connected')
                     UpdateStatusImage('connected');
                 else
                     UpdateStatusImage('disconnected');
@@ -464,7 +485,6 @@ function navigateTabs (direction) {
     if(direction === 'right') {
         chrome.runtime.sendMessage({tab_direction: 'right'}, function (response) {
             if (response.tabSwitched === 'switched') {
-                UpdateStatusImage('move_tab_right');
                 console.log('Next tab');
             }
         });
@@ -472,7 +492,6 @@ function navigateTabs (direction) {
     else if(direction === 'left') {
         chrome.runtime.sendMessage({tab_direction: 'left'}, function (response) {
             if (response.tabSwitched === 'switched') {
-                UpdateStatusImage('move_tab_left');
                 console.log('Previous tab');
             }
         });
@@ -587,38 +606,8 @@ function StatusMessage(message, color) {
         $("#leap-notification").css({'background-color': '#ff6519'});
     else if (color === 'info')
         $("#leap-notification").css({'background-color': '#3aff31'});
-    $("#leap-notification").fadeIn("slow").append(message);
+    $("#leap-notification p").fadeIn("slow").text(message);
     $("#leap-notification").fadeTo(3000, 500).fadeOut("slow");
-}
-
-// get saved settings to use on runtime
-function GetSettings(appSettings) {
-    chrome.storage.local.get(['setupDone', 'extensionOn', 'startOn', 'errorPos', 'scrollOn',
-        'historyOn', 'tabOn', 'refreshOn', 'zoomOn', 'scrollSpeed', 'continuousScroll',
-        'scrollThresholdX', 'scrollThresholdY', 'scrollStepX', 'scrollStepY', 'connectionTimeOut', 'fpsScaleFactor',
-        'discreteActionDelay', 'refreshThreshold', 'historyThreshold', 'firstSettings'], function (items) {
-        appSettings.setupDone = items.setupDone;
-        appSettings.extensionOn = items.extensionOn;
-        appSettings.startOn = items.startOn;
-        appSettings.errorPos = items.errorPos;
-        appSettings.scrollOn = items.scrollOn;
-        appSettings.historyOn = items.historyOn;
-        appSettings.tabOn = items.tabOn;
-        appSettings.refreshOn = items.refreshOn;
-        appSettings.zoomOn = items.zoomOn;
-        appSettings.scrollSpeed = items.scrollSpeed;
-        appSettings.continuousScroll = items.continuousScroll;
-        appSettings.scrollThresholdX = items.scrollThresholdX;
-        appSettings.scrollThresholdY = items.scrollThresholdY;
-        appSettings.scrollStepX = items.scrollStepX;
-        appSettings.scrollStepY = items.scrollStepY;
-        appSettings.connectionTimeOut = items.connectionTimeOut;
-        appSettings.fpsScaleFactor = items.fpsScaleFactor;
-        appSettings.discreteActionDelay = items.discreteActionDelay;
-        appSettings.refreshThreshold = items.refreshThreshold;
-        appSettings.historyThreshold = items.historyThreshold;
-        appSettings.firstSettings = items.firstSettings;
-    });
 }
 
 function FadeStatusImg(state) {
@@ -644,7 +633,7 @@ function AddDOMElement() {
             StatusAppendPos = 'header';
         else
             StatusAppendPos = 'body';
-        $(StatusAppendPos).append('<div id="leap-notification" style="display: none"></div>');
+        $(StatusAppendPos).append('<div id="leap-notification" style="display: none"><p></p></div>');
     }
 }
 
@@ -662,42 +651,48 @@ function ShowDOMs(state) {
 }
 
 // leap events
+// TODO: hide those events when device not streaming
+controller.on('focus', function() {
+    tab_has_focus = true;
+    console.log("focus");
+});
+controller.on('blur', function() {
+    tab_has_focus = false;
+    console.log("blur");
+});
+
 controller.on('ready', function() {
     console.log("LeapJS v" + Leap.version.full);
     console.log("ready. Service version: " + controller.connection.protocol.serviceVersion);
 });
 controller.on('connect', function() {
     console.log("connected with protocol v" + controller.connection.opts.requestProtocolVersion);
-    leap_status = 'connected';
-    chrome.storage.local.set({leap_status: 'connected'});
+    leap_status = 'Port connected';
+    chrome.storage.local.set({leap_status: leap_status});
 });
 controller.on('disconnect', function() {
-    console.log("disconnect");
-    leap_status = 'disconnected';
-    chrome.storage.local.set({leap_status: 'disconnected'});
-});
-
-// TODO: hide those events when device not streaming
-controller.on('focus', function() {
-    console.log("focus");
-});
-controller.on('blur', function() {
-    console.log("blur");
+    console.log("Port disconnect");
+    leap_status = 'Port disconnected';
+    chrome.storage.local.set({leap_status: leap_status});
 });
 
 controller.on('deviceAttached', function(deviceInfo) {
+    attached = true;
     console.log("deviceAttached", deviceInfo);
 });
 controller.on('deviceRemoved', function(deviceInfo) {
+    attached = false;
     console.log("deviceRemoved", deviceInfo);
 });
 controller.on('deviceStreaming', function(deviceInfo) {
+    streaming = true;
     console.log("deviceStreaming", deviceInfo);
 });
 controller.on('deviceStopped', function(deviceInfo) {
-
+    streaming = false;
     console.log("deviceStopped", deviceInfo);
 });
+
 controller.on('streamingStarted', function(deviceInfo) {
     console.log("streamingStarted", deviceInfo);
 });

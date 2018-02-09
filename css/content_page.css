@@ -6,6 +6,7 @@
     z-index:1050;
     left: 45%;
     text-align:center;
+    vertical-align: middle;
     font-weight:normal;
     font-size:18px;
     font-weight:bold;
@@ -69,4 +70,8 @@
     width: 15%;
     height: 8%;
     margin: 1%;
+}
+
+.backgroundBlink{
+    background: #ff8b7c;
 }
