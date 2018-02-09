@@ -4,6 +4,7 @@
  * @version 0.1
  */
 
+//TODO: fix wrong error message when tab loses focus for too long
 //TODO: settings saving first run in here
 //TODO: gesture to reset zoom to normal
 //TODO: if the extension crashes reload page!
@@ -13,18 +14,16 @@
 // Extension settings variable declaration
 var appSettings = ({});
 
-
 //TODO: to add to settings
 var zoomScale = 0.1;
 
 // Variable declarations
 var attached, streaming;
 var leap_status;
-var curRefreshCount = 0, curZoomCount = 0;
+var curRefreshCount = 0;
 var curHistoryCount = 0;
 var scrollSpeed;
 var messageCounter = 0;
-
 
 var tab_has_focus;
 var lastFramePos = ({x: 0, y: 0, z: 0});
@@ -138,22 +137,31 @@ MessagingHandler();
 //TODO: add condition when the leap crashes, restart it or reload browser
 // check connection of leap device
 connection = setInterval(CheckConnection, 1000);
-function CheckConnection() {
-    if(tab_has_focus)
-        currentTime = new Date().getTime() / 1000;
-   // console.log(currentTime + " * " + lastCheckTime);
-    if(currentTime - lastCheckTime > appSettings.connectionTimeOut) {
-        //clearInterval(connection);
-        if(messageCounter % 12 === 0) {
-            console.log("Connection lost!");
-            messageInterval = setInterval(StatusMessage("Connection to device have been lost!", 'error'), 5000);
-            messageCounter = 0;
-        }
-        messageCounter++;
-        ConnectionLost = true;
-        leap_status = 'Port disconnected';
+// get first leap_status and save it to storage
+function initStatus() {
+    if(attached) {
+        leap_status = 'Port connected';
         chrome.storage.local.set({leap_status: leap_status});
-        UpdateStatusImage('disconnected');
+    }
+}
+initStatus();
+function CheckConnection() {
+    if (tab_has_focus) {
+        currentTime = new Date().getTime() / 1000;
+        // console.log(currentTime + " * " + lastCheckTime);
+        if (currentTime - lastCheckTime > appSettings.connectionTimeOut) {
+            //clearInterval(connection);
+            if (messageCounter % 12 === 0) {
+                console.log("Connection lost!");
+                messageInterval = setInterval(StatusMessage("Connection to device have been lost!", 'error'), 5000);
+                messageCounter = 0;
+            }
+            messageCounter++;
+            ConnectionLost = true;
+            leap_status = 'Port disconnected';
+            chrome.storage.local.set({leap_status: leap_status});
+            UpdateStatusImage('disconnected');
+        }
     }
 }
 
@@ -166,8 +174,8 @@ function MessagingHandler() {
             // disconnect command from popup button
             if (request.popUpAction === 'disconnect') {
                 controller.disconnect();
-                if(leap_status === 'Port disconnected');
-                FadeStatusImg(false);
+                if(leap_status === 'Port disconnected')
+                    FadeStatusImg(false);
                 sendResponse({leap_status: leap_status});
             }
             // connect command from popup button
@@ -186,8 +194,6 @@ function MessagingHandler() {
     } catch(error) {
         console.error(error.message);
     }
-
-
 }
 
 // run the leap loop, this will be running until disconnected
@@ -203,7 +209,8 @@ controller.loop(function(frame) {
 
     ConnectionLost = false;
     leap_status = 'Port connected';
-    chrome.storage.local.set({leap_status: leap_status});
+    if(tab_has_focus)
+        chrome.storage.local.set({leap_status: leap_status});
     attached = true;
     streaming = true;
     messageCounter = 0;
@@ -362,7 +369,6 @@ controller.loop(function(frame) {
         }
         // apply actions
         console.log("action: " + action);
-        console.log("zoom Count: " + curZoomCount);
         switch (action) {
             case 'scroll':
                 ScrollPage(frameDiff);
