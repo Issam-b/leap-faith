@@ -12,12 +12,39 @@
     border-radius: 3px;
 }
 
-#status-placeholder {
-    padding: 12px 14px 12px 14px;
+.bottom-notification {
+    padding: 14px;
     position: fixed;
-    bottom: 13px;
-    right: 1px;
     z-index: 90;
+    bottom: 1%;
+    right: 1%;
+}
+
+.middle-notification {
+    position: fixed;
+    padding: 14px;
+    z-index: 90;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.right-notification {
+    position: fixed;
+    padding: 14px;
+    z-index: 90;
+    top: 50%;
+    left: 90%;
+    transform: translate(0%, -50%);
+}
+
+.left-notification {
+    position: fixed;
+    padding: 14px;
+    z-index: 90;
+    top: 50%;
+    right: 90%;
+    transform: translate(0%, -50%);
 }
 
 .modal {

@@ -7,6 +7,7 @@
 
 var tabSwitched, activeTabIndex, switchedTabIndex;
 var tabsCount;
+var newZoom;
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse)
 	{
@@ -43,9 +44,10 @@ chrome.runtime.onMessage.addListener(
 		else if(request.zoomFactor) {
 			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 chrome.tabs.getZoom(tabs[0].id, function (zoomLevel) {
-                    chrome.tabs.setZoom(tabs[0].id, zoomLevel + request.zoomFactor, function () {});
+                    console.log(zoomLevel + " " + request.zoomFactor);
+                    newZoom = zoomLevel - request.zoomFactor;
+                    chrome.tabs.setZoom(tabs[0].id, newZoom, function () {});
                 });
-
 			});
 			sendResponse({zoomDone: true});
         }
