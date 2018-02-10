@@ -15,7 +15,7 @@
 var appSettings = ({});
 
 // Variable declarations
-var attached, streaming;
+var attached = false, streaming = false;
 var leap_status;
 var curRefreshCount = 0;
 var curHistoryCount = 0;
@@ -153,7 +153,7 @@ function initStatus() {
 }
 initStatus();
 function CheckConnection() {
-    if (tab_has_focus) {
+    if (tab_has_focus && attached) {
         currentTime = new Date().getTime() / 1000;
         if (currentTime - lastCheckTime > appSettings.connectionTimeOut && !ConnectionLost) {
             //clearInterval(connection);
@@ -745,6 +745,16 @@ controller.on('deviceAttached', function(deviceInfo) {
 });
 controller.on('deviceRemoved', function(deviceInfo) {
     attached = false;
+    console.log("Connection lost!");
+    StatusMessage("Connection to device has been lost!", 'error');
+    messageInterval = setInterval(function() {
+        StatusMessage("Connection to device has been lost!", 'error')
+    }, 10000);
+    ConnectionLost = true;
+    leap_status = 'Port disconnected';
+    chrome.storage.local.set({leap_status: leap_status});
+    UpdateStatusImage('disconnected');
+
     console.log("deviceRemoved", deviceInfo);
 });
 controller.on('deviceStreaming', function(deviceInfo) {
