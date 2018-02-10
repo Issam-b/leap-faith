@@ -20,6 +20,8 @@ var leap_status;
 var curRefreshCount = 0;
 var curHistoryCount = 0;
 var scrollSpeed;
+// TODO: add this to settings
+var LostTime, stopNotificationTimeout = 20;
 
 var tab_has_focus;
 var lastFramePos = ({x: 0, y: 0, z: 0});
@@ -164,6 +166,7 @@ function CheckConnection() {
                 StatusMessage("Connection to device has been lost!", 'error')
             }, 10000);
             ConnectionLost = true;
+            LostTime = currentTime;
             leap_status = 'Port disconnected';
             chrome.storage.local.set({leap_status: leap_status});
             UpdateStatusImage('disconnected');
@@ -220,8 +223,13 @@ controller.loop(function(frame) {
         UpdateStatusImage('connected');
 
     // if device is not attached exit
-    if(!attached || !appSettings.extensionOn)
+    if(!attached || !appSettings.extensionOn) {
+        if(new Date().getTime() / 1000 - LostTime > stopNotificationTimeout) {
+            clearInterval(messageInterval);
+            FadeStatusImg(false);
+        }
         return;
+    }
 
     ConnectionLost = false;
     leap_status = 'Port connected';
@@ -751,6 +759,7 @@ controller.on('deviceRemoved', function(deviceInfo) {
         StatusMessage("Connection to device has been lost!", 'error')
     }, 10000);
     ConnectionLost = true;
+    LostTime = new Date().getTime() / 1000;
     leap_status = 'Port disconnected';
     chrome.storage.local.set({leap_status: leap_status});
     UpdateStatusImage('disconnected');
