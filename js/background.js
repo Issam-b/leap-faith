@@ -5,9 +5,10 @@
  * @version 0.1
  */
 
-var tabSwitched, activeTabIndex, switchedTabIndex;
+var tabSwitched, activeTabIndex;
 var tabsCount;
 var newZoom;
+var switchToTab;
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse)
 	{
@@ -19,19 +20,22 @@ chrome.runtime.onMessage.addListener(
 			// get tabs in the current window only
             chrome.tabs.query({currentWindow: true}, function(tabs) {
 				tabsCount = tabs.length;
+				console.log(tabs);
 				if (request.tab_direction === 'right') {
-					switchedTabIndex = activeTabIndex + 1;
+                    switchToTab = (activeTabIndex + 1) % tabsCount;
 					// get tab with next index
-					chrome.tabs.query({index: (activeTabIndex + 1) % tabsCount}, function(tabs) {
+					chrome.tabs.query({index: switchToTab}, function(tabs) {
 						// highlight tab and focus on it
                         chrome.tabs.update(tabs[0].id, { highlighted: true, active: true });
 						tabSwitched = 'switched';
 					});
 				}
 				else if (request.tab_direction === 'left') {
-					switchedTabIndex = activeTabIndex + 1;
+                    switchToTab = (activeTabIndex - 1) % tabsCount;
+                    if(switchToTab === -1)
+                    	switchToTab = tabsCount - 1;
                     // get tab with previous index
-					chrome.tabs.query({index: (activeTabIndex - 1) % tabsCount}, function(tabs) {
+					chrome.tabs.query({index: switchToTab}, function(tabs) {
                         // highlight tab and focus on it
                         chrome.tabs.update(tabs[0].id, { highlighted: true, active: true });
 						tabSwitched = 'switched';
@@ -41,7 +45,7 @@ chrome.runtime.onMessage.addListener(
 			sendResponse({ tabSwitched: tabSwitched });
 		}
 		// zoom page
-		else if(request.zoomFactor) {
+		if(request.zoomFactor) {
 			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 chrome.tabs.getZoom(tabs[0].id, function (zoomLevel) {
                     console.log(zoomLevel + " " + request.zoomFactor);

@@ -570,12 +570,12 @@ function getScrollMax(axis) {
 // Zoom function
 function zoomPage(zoomFactor) {
     chrome.runtime.sendMessage({zoomFactor: zoomFactor}, function (response) {
-        // if (response.zoomDone === 'zoomed') {  // this condition doesn't make sense but let's just do
+        if (response.zoomDone === 'zoomed') {
             if(zoomFactor > 0)
                 console.log('Zoom Out');
             else
                 console.log('Zoom In');
-        // }
+        }
     });
 }
 
