@@ -49,7 +49,7 @@ chrome.runtime.onMessage.addListener(
                     chrome.tabs.setZoom(tabs[0].id, newZoom, function () {});
                 });
 			});
-			sendResponse({zoomDone: true});
+			sendResponse({zoomDone: 'zoomed'});
         }
 	}
 );

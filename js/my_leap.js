@@ -301,12 +301,8 @@ controller.loop(function(frame) {
         var zoomFactor = 0;
         if (extendedFingers >= 4) {
             // scroll gesture
-            // TODO: fix a trigger to scroll
-            if (extendedFingers === 5 && appSettings.scrollOn) {
-                // if there's 5 extended fingers go with scroll or history navigation gesture
-                // console.log("action: " + action);
-                // if(curHistoryCount > appSettings.historyThreshold) {
-                // console.log("counter " + curHistoryCount);
+            // if there's 5 extended fingers go with scroll or history navigation gesture
+            if (appSettings.scrollOn && extendedFingers === 5) {
                 if (curHistoryCount > appSettings.historyThreshold) {
                     if (Math.abs(frameDiff.y) > appSettings.scrollThresholdY ||
                         Math.abs(frameDiff.x) > appSettings.scrollThresholdX) {
@@ -315,20 +311,18 @@ controller.loop(function(frame) {
                 }
                 curHistoryCount++;
             }
+
             // history navigation gesture
             if(appSettings.historyOn) {
                 if (frame.valid && frame.gestures.length > 0) {
                     var gesture = frame.gestures[0];
                     if (gesture.type === 'swipe') {
-                        // console.log("inside swipe");
                         var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
-                        if (isHorizontal && curHistoryCount > 0 && lastAction !== 'move_history_left' &&
-                            lastAction !== 'move_history_right') {
-                            if (gesture.direction[0] > 0) {
+                        if (isHorizontal && curHistoryCount > 0) {
+                            // TODO: might be good to add some constraint to the side that is in accordance with the hand type
+                            if (gesture.direction[0] > 0 && lastAction !== 'move_history_left') {
                                 action = 'move_history_right';
-                            } else {
-                                // TODO: might be good to add some constraint to the side that
-                                // is in accordance with the hand type
+                            } else if (gesture.direction[0] < 0 && lastAction !== 'move_history_right'){
                                 action = 'move_history_left';
                             }
                         }
@@ -336,25 +330,22 @@ controller.loop(function(frame) {
                 }
             }
         }
-        // refresh gesture
-        else if (extendedFingers == 1 && fingersList[1].extended && lastExtendedFingers === 1 && appSettings.refreshOn) {
-            if(frame.valid && frame.gestures.length > 0) {
-                frame.gestures.forEach( function (gesture) {
-                    var pointableIds = gesture.pointableIds;
-                    pointableIds.forEach( function (pointableId) {
-                        var pointable = frame.pointable(pointableId);
-                        if(pointable === fingersList[1] && gesture.type === 'circle' &&
-                            curRefreshCount > appSettings.refreshThreshold) {
-                            action = 'refresh';
-                        }
-                        curRefreshCount++;
-                    });
-                });
-            }
+
+        // refresh gesture with index finger
+        else if (appSettings.refreshOn && extendedFingers == 1 && fingersList[1].extended &&
+            lastExtendedFingers === 1 && frame.gestures.length > 0) {
+                var gesture = frame.gestures[0];
+                if(gesture.type === 'circle' /*&& curRefreshCount > appSettings.refreshThreshold*/) {
+                    action = 'refresh';
+                    // curRefreshCount = 0;
+                }
+                // curRefreshCount++;
         }
-        // tab move gesture
-        else if (extendedFingers === 2 && lastExtendedFingers === 2 && appSettings.tabOn) {
-            if(frame.valid && frame.gestures.length > 0) {
+
+        // tab move gesture with two fingers
+        else if (appSettings.tabOn && extendedFingers === 2 && frame.gestures.length > 0) {
+            console.log("im here yoo");
+            console.log(frame.gestures);
                 var gesture = frame.gestures[0];
                 if(gesture.type === 'swipe') {
                     var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
@@ -366,12 +357,12 @@ controller.loop(function(frame) {
                         }
                     }
                 }
-            }
         }
-        // zoom gesture if thumb extended and unextend thumb to stop it
+
+        // zoom gesture if thumb extended and non-extended thumb to stop it
         // zoom factor is 10%
-        else if(extendedFingers === 1 && lastExtendedFingers === 1 && fingersList[0].extended &&
-            lastAction !== 'zoom' && Math.abs(frameDiff.z) > appSettings.scrollThresholdY && appSettings.zoomOn) {
+        else if(appSettings.zoomOn && extendedFingers === 1 && lastExtendedFingers === 1 && fingersList[0].extended &&
+            lastAction !== 'zoom' && Math.abs(frameDiff.z) > appSettings.scrollThresholdY) {
                     var thumbPos = fingersList[0].dipPosition;
                     var IndexPos = fingersList[1].dipPosition;
                     var distance = Math.sqrt(Math.pow(thumbPos[0]-IndexPos[0], 2) +
@@ -579,11 +570,11 @@ function getScrollMax(axis) {
 // Zoom function
 function zoomPage(zoomFactor) {
     chrome.runtime.sendMessage({zoomFactor: zoomFactor}, function (response) {
-        // if (response.zoomDone === true) {  // this condition doesn't make sense but let's just do
+        // if (response.zoomDone === 'zoomed') {  // this condition doesn't make sense but let's just do
             if(zoomFactor > 0)
-                console.log('Zoom In');
-            else
                 console.log('Zoom Out');
+            else
+                console.log('Zoom In');
         // }
     });
 }
