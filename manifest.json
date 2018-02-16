@@ -38,6 +38,7 @@
 "web_accessible_resources": [
 	"images/*"
 ],
+"content_security_policy": "default-src 'self'",
 "permissions": [
 	"tabs",
 	"storage",

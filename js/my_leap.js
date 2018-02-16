@@ -4,12 +4,11 @@
  * @version 0.1
  */
 
-//TODO: fix wrong error message when tab loses focus for too long
 //TODO: gesture to reset zoom to normal
 //TODO: if the extension crashes reload page!
 //TODO: make a timeout of usage so if the user didn't interact with the device it disconnects
 //TODO: reduce scroll step if page scrollMax is too big
-    //TODO: fix semaphore problem
+//TODO: fix multiple read/write to storage (semaphore problem)
 
 // Extension settings variable declaration
 var appSettings = ({});
@@ -143,7 +142,7 @@ AddDOMElement();
 MessagingHandler();
 
 // TODO: send message to background
-//TODO: add condition when the leap crashes, restart it or reload browser
+// TODO: add condition when the leap crashes, restart it or reload browser
 // check connection of leap device
 connection = setInterval(CheckConnection, 1000);
 // get first leap_status and save it to storage
@@ -277,7 +276,7 @@ controller.loop(function(frame) {
 
 
 
-        // if setup dialog is open don't look for gestures
+        // if setup dialog is   open don't look for gestures
         if(setupModalOpen)
             return;
 
@@ -344,7 +343,6 @@ controller.loop(function(frame) {
 
         // tab move gesture with two fingers
         else if (appSettings.tabOn && extendedFingers === 2 && frame.gestures.length > 0) {
-            console.log("im here yoo");
             console.log(frame.gestures);
                 var gesture = frame.gestures[0];
                 if(gesture.type === 'swipe') {
