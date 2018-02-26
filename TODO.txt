@@ -1,0 +1,8 @@
+//TODO: gesture to reset zoom to normal
+//TODO: if the extension crashes reload page!
+//TODO: make a timeout of usage so if the user didn't interact with the device it disconnects
+//TODO: reduce scroll step if page scrollMax is too big
+//TODO: fix multiple read/write to storage (semaphore problem)
+//TODO: add condition when the leap crashes, restart it or reload browser
+//TODO: might be good to add some constraint to the side that is in accordance with the hand type
+// TODO: add stopNotificationTimeout to settings
