@@ -42,3 +42,7 @@ Then move the hand to front and to back (closer to screen and away from screen a
 Then, to stop just fold the thumb or extend your other fingers.
 
 The extension was tested on Chrome browser on Windows 10 and Arch Linux OS.
+
+
+# Limitations
+The scroll may not work in pages that use non-native scroll bars. Also the extension will not work in a new tab page, unless you have set a new tab to be a particular web page. This is due to Chrome limitations on extensions.
