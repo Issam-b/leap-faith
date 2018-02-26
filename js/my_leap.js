@@ -1,6 +1,6 @@
 /**
  * @file Leap motion chrome extension content script for gestures handling.
- * @author Assam Boudjelthia <assam.bj@gmail.com>
+ * @author Assam Boudjelthia <assam.bj *AT* gmail *DOT* com>
  * @version 0.1
  */
 
