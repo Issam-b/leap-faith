@@ -6,7 +6,7 @@
 
 // Extension settings variable declaration
 var appSettings = ({});
-var DEBUG = true;
+var DEBUG = false;
 // Variable declarations
 var attached = false, streaming = false;
 var leap_status;
@@ -172,7 +172,6 @@ function CheckConnection() {
             LostTime = currentTime;
             leap_status = 'Port disconnected';
             chrome.storage.local.set({leap_status: leap_status});
-            console.log("disconnected image from checkConnection");
             UpdateStatusImage('disconnected');
             last_focus_time = 0;
             if(DEBUG) {
@@ -236,7 +235,6 @@ controller.loop(function(frame) {
     // update icon status
     if(action === 'none' && leap_status === 'Port connected' && attached &&
         statusImageDom.attr('src') !== connectedImage) {
-        console.log("connected image from loop");
             UpdateStatusImage('connected');
     }
 
@@ -741,14 +739,12 @@ function AddDOMElement() {
         '<img id=' + STATUS_IMAGE_DOM_NAME + ' src="" alt="scrolling" width="72" height="72"/></div>');
 
     // DOM for Connection status on top of page
-    // window.onload = function () {
         var StatusAppendPos;
         if(document.querySelectorAll('header').length > 0)
             StatusAppendPos = 'header';
         else
             StatusAppendPos = 'body';
         $(StatusAppendPos).append('<div id=' + NOTIFICATION_MESSAGE_DOM_NAME + '></div>');
-    // };
 
     // log event
     if(DEBUG)
@@ -851,9 +847,6 @@ function deviceAttached(deviceInfo) {
     // set required flags
     attached = true;
     ConnectionLost = false;
-    // leap_status = 'Port disconnected';
-    // chrome.storage.local.set({leap_status: leap_status});
-    console.log("connected image from device attached");
     clearInterval(messageInterval);
     UpdateStatusImage('connected');
     if(DEBUG)
@@ -875,7 +868,6 @@ function deviceRemoved(deviceInfo) {
             console.log("deviceRemoved", deviceInfo);
     }
     UpdateStatusImage('disconnected');
-    console.log("disconnected image from device removed");
     if(DEBUG)
         console.log("Connection lost!");
 }
