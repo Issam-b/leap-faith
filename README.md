@@ -22,23 +22,29 @@ The options page has a very customizable list of options that the user can confi
 
 # Gestures and actions
 Now there's only 5 gestures ( I intend to add more later :) )
+# Video
 The gestures are illustrated in the pictures and video below:
 
 [![Gestures and UI preview](https://img.youtube.com/vi/bOg5ZyjB8rg/0.jpg)](https://www.youtube.com/watch?v=bOg5ZyjB8rg)
 
+# Picture illustrations
 ![Scroll_history](images/demo/scroll_history.png?raw=true "Scroll page and navigate history")
+
 To make a scroll event, the user must stretch his hand so the fingers are all detected as extended. Thus, to scroll up/down the page, a slight upward/downward movement of the
 hand is all what’s required. Also, with the hand opened as in Figure 21, when a user swipes to
 the left/right, the browser switches page to backward/forward history.
 
 ![zoom](images/demo/zoom.png?raw=true "Zoom the page")
+
 To move through the browser’s tabs, two fingers must be extended. It’s preferable
 to put the hand in this position for bit of time (i.e. ~1 second) then swipe left or right.
 
 ![refresh](images/demo/refresh.png?raw=true "Refresh page")
+
 To refresh just rotate the extended index finger once or twice.
 
 ![Switch tabs](images/demo/switch_tabs.png?raw=true "Switch between tabs")
+
 The user has to use a fist-like hand with only thumb extended (other fingers folded).
 Then move the hand to front and to back (closer to screen and away from screen above the device).
 Then, to stop just fold the thumb or extend your other fingers.
