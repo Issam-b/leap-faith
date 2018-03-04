@@ -22,7 +22,9 @@ The options page has a very customizable list of options that the user can confi
 
 # Gestures and actions
 Now there's only 5 gestures ( I intend to add more later :) )
-The gestures are illustrated in the pictures (a video will come soon):
+The gestures are illustrated in the pictures and video below:
+
+[![Gestures and UI preview](https://img.youtube.com/vi/bOg5ZyjB8rg/0.jpg)](https://www.youtube.com/watch?v=bOg5ZyjB8rg)
 
 ![Scroll_history](images/demo/scroll_history.png?raw=true "Scroll page and navigate history")
 To make a scroll event, the user must stretch his hand so the fingers are all detected as extended. Thus, to scroll up/down the page, a slight upward/downward movement of the
