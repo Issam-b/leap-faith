@@ -6,6 +6,8 @@ The aim from this extension is to have basic controls, and good looking visual f
 **Note:** This extension requires a Leap Motion controller to run (see https://www.leapmotion.com/).
 
 # First run and setup
+To downoad the extension from the **Chrome store** visit this [link](https://chrome.google.com/webstore/detail/leap-of-faith/clmfjbffimjbmkbknmhflghngplomdka).
+
 At first run, the device has to be running and the Leap Motion Contol Panel and service has to be running. The feature in control panel "Allow web apps" has to enabled.
 ```
 Leap Motion Control Panel -> General -> Allow web apps
@@ -21,7 +23,7 @@ The options page has a very customizable list of options that the user can confi
 ![Options page](images/demo/options_page.PNG?raw=true "The options page")
 
 # Gestures and actions
-Now there's only 5 gestures ( I intend to add more later :) )
+Now there's only 5 gestures ( I intend to add more later :)
 # Video
 The gestures are illustrated in the pictures and video below:
 
