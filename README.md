@@ -27,7 +27,7 @@ Now there's only 5 gestures ( I intend to add more later :)
 # Video
 The gestures are illustrated in the pictures and video below:
 
-[![Gestures and UI preview](https://img.youtube.com/vi/bOg5ZyjB8rg/0.jpg)](https://www.youtube.com/watch?v=bOg5ZyjB8rg)
+[![Gestures and UI preview](https://img.youtube.com/vi/bOg5ZyjB8rg/0.jpg)](https://www.youtube.com/watch?v=2ARdRAaod3A)
 
 # Picture illustrations
 ![Scroll_history](images/demo/scroll_history.png?raw=true "Scroll page and navigate history")
