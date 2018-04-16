@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "Leap Motion controller",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"author": "Assam Boudjelthia",
 	"description": "Leap Motion Controller extension to control web browser with Leap Motion device.",
 	"minimum_chrome_version": "19.0.1055.1",
