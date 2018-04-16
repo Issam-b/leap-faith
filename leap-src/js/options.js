@@ -86,7 +86,7 @@ function defaults() {
   scrollStepX.value = 10;
   scrollStepY.value = 10;
   connectionTimeOut.value = 5;
-  fpsScaleFactor.value = 20;
+  fpsScaleFactor.value = 10;
   discreteActionDelay.value = 500;
   zoomScale.value = 0.1;
   setupDone.checked = true;
