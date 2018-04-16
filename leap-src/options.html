@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Leap of Faith Settings</title>
     <link rel="stylesheet" href="css/options.css" type="text/css" />
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
     <script type="application/javascript" src="js/options.js"></script>
 </head>
+
 <body>
     <div class="body-container">
         <h2>
@@ -15,88 +17,105 @@
 
         <div id="startUpOptions">
             <div class="subtitle">
-                <input type="checkbox" id="Enable_extension"/>
-                <label for="Enable_extension">Enable Leap of Faith extension</label><br>
+                <input type="checkbox" id="Enable_extension" />
+                <label for="Enable_extension">Enable Leap of Faith extension</label>
+                <br>
             </div>
         </div>
 
         <div>
-            <label class="subtitle">Error/Info notifications image position</label><br>
+            <label class="subtitle">Error/Info notifications image position</label>
+            <br>
             <div id="NotificationOptions" class="subOption">
                 <input class="inline" type="radio" name="Notifications" id="NotificationCenter">
                 <label class="inline" for="NotificationCenter">Center</label>
-                <input class="inline"  type="radio" name="Notifications" id="NotificationBottom">
+                <input class="inline" type="radio" name="Notifications" id="NotificationBottom">
                 <label class="inline" for="NotificationBottom">Bottom right corner</label>
             </div>
         </div>
 
         <div>
-            <label class="subtitle">Manage gestures</label><br>
+            <label class="subtitle">Manage gestures</label>
+            <br>
             <div class="subOption" data-toggle="tooltip" data-placement="auto" title="To scroll use your hand's fingers with 5 fingers extended and move it up and down or right and left to scroll the page. Notice that you need to only move your hand and NOT swipe it.">
-                <input type="checkbox" id="Scroll"/>
-                <label for="Scroll">Scroll enable</label><br>
+                <input type="checkbox" id="Scroll" />
+                <label for="Scroll">Scroll enable</label>
+                <br>
             </div>
-                <div class="subOption" data-toggle="tooltip" data-placement="auto" title="To navigate your page's history, use your hand's fingers in extended state (at least 4 extended fingers), and swipe right or left to go through your page's history.">
-                <input type="checkbox" id="History_switch"/>
-                <label for="History_switch"> History switch enable</label><br>
+            <div class="subOption" data-toggle="tooltip" data-placement="auto" title="To navigate your page's history, use your hand's fingers in extended state (at least 4 extended fingers), and swipe right or left to go through your page's history.">
+                <input type="checkbox" id="History_switch" />
+                <label for="History_switch"> History switch enable</label>
+                <br>
             </div>
             <div class="subOption" data-toggle="tooltip" data-placement="auto" title="To switch to next and previous tabs, use two fingers (index and middle) and swipe sideways (right or left) to move between tabs.">
-                <input type="checkbox" id="Tab_switch"/>
-                <label for="Tab_switch">Tab switch enable</label><br>
+                <input type="checkbox" id="Tab_switch" />
+                <label for="Tab_switch">Tab switch enable</label>
+                <br>
             </div>
 
             <div class="subOption" data-toggle="tooltip" data-placement="auto" title="To refresh a page use one extended finger (index finger) to draw a circle shape.">
-                <input type="checkbox" id="Refresh"/>
-                <label for="Refresh">Refresh page enable</label><br>
+                <input type="checkbox" id="Refresh" />
+                <label for="Refresh">Refresh page enable</label>
+                <br>
             </div>
             <div class="subOption" data-toggle="tooltip" data-placement="auto" title="To zoom in/out use your hand as a fist with the thumb finger extended (all other fingers closed) and move it on the Z-axis (forward and backward). To stop zoom and prevent unwanted zooms while moving your hand just close the thumb finger.">
-                <input type="checkbox" id="Zoom"/>
-                <label for="Zoom">Zoom enable</label><br>
+                <input type="checkbox" id="Zoom" />
+                <label for="Zoom">Zoom enable</label>
+                <br>
             </div>
             <div class="subOption" data-toggle="tooltip" data-placement="auto" title="Set to false and save to reset the center of the interaction box.">
-                <input type="checkbox" id="setupDone"/>
-                <label for="setupDone">Reset calibration setup</label><br>
+                <input type="checkbox" id="setupDone" />
+                <label for="setupDone">Reset calibration setup</label>
+                <br>
             </div>
             <div class="subOption">
-                <input type="checkbox" id="continuousScroll"/>
-                <label for="continuousScroll">Continuous scroll</label><br><br>
+                <input type="checkbox" id="continuousScroll" />
+                <label for="continuousScroll">Continuous scroll</label>
+                <br>
+                <br>
             </div>
             <div class="subOption">
                 <label class="inline">Scroll threshold:</label>
                 <label class="inline SL" for="scrollThresholdX">X:</label>
-                <input class="inline" type="number" min="1" max="100" id="scrollThresholdX"/>
+                <input class="inline" type="number" min="1" max="100" id="scrollThresholdX" />
                 <label class="inline SL" for="scrollThresholdY">Y:</label>
-                <input class="inline" type="number" min="1" max="100" id="scrollThresholdY"/>
+                <input class="inline" type="number" min="1" max="100" id="scrollThresholdY" />
             </div>
             <div class="subOption">
-                <label class="inline" >Scroll Step:</label>
+                <label class="inline">Scroll Step:</label>
                 <label class="inline SL" for="scrollStepX">X:</label>
-                <input class="inline" type="number" min="1" max="100" id="scrollStepX"/>
+                <input class="inline" type="number" min="1" max="100" id="scrollStepX" />
                 <label class="inline SL" for="scrollStepY">Y:</label>
-                <input class="inline" type="number" min="1" max="100" id="scrollStepY"/>
+                <input class="inline" type="number" min="1" max="100" id="scrollStepY" />
             </div>
             <div class="subOption">
                 <label for="connectionTimeOut">Connection timeout:</label>
-                <input type="number" min="1" max="50" id="connectionTimeOut"/><br>
+                <input type="number" min="1" max="50" id="connectionTimeOut" />
+                <br>
             </div>
             <div class="subOption">
                 <label for="fpsScaleFactor">Sensitivity (1: very sensitive, 40:very slow):</label>
-                <input type="number" min="1" max="40" id="fpsScaleFactor"/><br>
+                <input type="number" min="1" max="40" id="fpsScaleFactor" />
+                <br>
             </div>
             <div class="subOption">
                 <label for="discreteActionDelay">Status images fading timeout:</label>
-                <input type="number" min="0" step="100" max="1000" id="discreteActionDelay"/><br>
+                <input type="number" min="0" step="100" max="1000" id="discreteActionDelay" />
+                <br>
             </div>
             <div class="subOption">
                 <label for="zoomScale">Zoom step:</label>
-                <input type="number" min="0.1" step="0.05" max="1" id="zoomScale"/><br>
+                <input type="number" min="0.1" step="0.05" max="1" id="zoomScale" />
+                <br>
             </div>
         </div>
         <div class="center">
             <button id="save" type="button" class="btn btn-secondary btn-lg">Save changes</button>
-            <button id="restore" type="button" class="btn btn-secondary btn-lg">Restore defaults</button><br>
+            <button id="restore" type="button" class="btn btn-secondary btn-lg">Restore defaults</button>
+            <br>
         </div>
         <p class="center" id="status"></p>
     </div>
 </body>
+
 </html>
