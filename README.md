@@ -27,7 +27,7 @@ Now there's only 5 gestures ( I intend to add more later :)
 # Video
 The gestures are illustrated in the pictures and video below:
 
-[![Gestures and UI preview](https://img.youtube.com/vi/2ARdRAaod3A/0.jpg)](https://www.youtube.com/watch?v=2ARdRAaod3A)
+[![Gestures and UI preview](https://img.youtube.com/vi/F8ConhSyWEk/0.jpg)](https://www.youtube.com/watch?v=F8ConhSyWEk)
 
 # Picture illustrations
 ![Scroll_history](leap-src/images/demo/scroll_history.png?raw=true "Scroll page and navigate history")
